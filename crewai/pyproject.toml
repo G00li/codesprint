@@ -1,0 +1,20 @@
+[tool.poetry]
+name = "robos-crewai"
+version = "0.1.0"
+description = "Desenvolvimento CrewAi"
+authors = ["Leandro Oliveira <leandro.gooli@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{ include = "app", from = "." }]
+
+[tool.poetry.dependencies]
+python = ">=3.12, <3.13"
+crewai = "^0.114.0"
+langchain = "^0.3.23"
+ollama = "^0.4.8"
+fastapi = "^0.115.12"
+uvicorn = {extras = ["standard"], version = "^0.34.2"}
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
