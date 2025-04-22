@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "codesprint"
+version = "0.1.0"
+description = "projeto final backend2"
+authors = ["Leandro Oliveira <leandro.gooli@gmail.com>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "app", from = "."}]
+
+[tool.poetry.dependencies]
+python = ">=3.12"
+fastapi = ">=0.115.12,<0.116.0"
+uvicorn = {extras = ["standard"], version = ">=0.34.2,<0.35.0"}
+psycopg2-binary = ">=2.9.10,<3.0.0"
+sqlalchemy = ">=2.0.40,<3.0.0"
+alembic = ">=1.15.2,<2.0.0"
+pydantic = ">=2.11.3,<3.0.0"
+python-dotenv = ">=1.1.0,<2.0.0"
+passlib = {extras = ["bcrypt"], version = ">=1.7.4,<2.0.0"}
+python-jose = {extras = ["cryptography"], version = ">=3.4.0,<4.0.0"}
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
