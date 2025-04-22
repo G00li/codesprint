@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query
+from fastapi import FastAPI
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -14,6 +14,10 @@ class ProjetoRequest(BaseModel):
     descricao: str
     usar_exa: Optional[bool] = False
 
+
+@app.get("/")
+def read_root():
+    return {"message": "Bem vindo ao CrewAI do CodeSprint"}
 
 @app.post("/gerar-projeto")
 def gerar_projeto(req: ProjetoRequest):
