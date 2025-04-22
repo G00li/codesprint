@@ -2,11 +2,7 @@ FROM python:3.12-alpine
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y \
-    openssl \
-    curl \
-    && rm -rf /var/lib/apt/lists/* \
-    && curl -sSL https://install.python-poetry.org | python3 -
+RUN pip install poetry
 
 RUN poetry config virtualenvs.create false
 
