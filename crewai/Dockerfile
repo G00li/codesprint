@@ -1,24 +1,21 @@
-FROM python:3.11-slim
+FROM python:3.12
 
-# Instala dependências do sistema
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    build-essential curl \
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
     && rm -rf /var/lib/apt/lists/*
 
-# Instala o Poetry
-ENV POETRY_VERSION=1.8.2
-RUN curl -sSL https://install.python-poetry.org | python3 - && \
-    ln -s /root/.local/bin/poetry /usr/local/bin/poetry
-
-ENV POETRY_VIRTUALENVS_CREATE=false
+RUN pip install poetry
+RUN poetry config virtualenvs.create false
 
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock* ./
-RUN poetry install --no-root
+RUN poetry install --no-root --no-interaction --no-ansi
 
 COPY . .
 
-EXPOSE 8001
+EXPOSE 8004
 
-CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8001"]
+CMD ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8004"]
