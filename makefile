@@ -29,3 +29,13 @@ clean: ## Clean all containers and volumes
 	@echo "${BLUE}Limpando ambiente...${NC}"
 	docker compose down -v --remove-orphans
 	@echo "${GREEN}Ambiente limpo!${NC}"
+
+up_crewai: ## Start crewai container
+	@echo "${BLUE}Subindo container crewai...${NC}"
+	docker compose build --no-cache crewai
+	@echo "${GREEN}Container crewai subido com sucesso!${NC}"
+
+down_crewai: ## Stop crewai container
+	@echo "${BLUE}Parando container crewai...${NC}"
+	docker compose down crewai
+	@echo "${GREEN}Container Crewai Encerrado!${NC}"
