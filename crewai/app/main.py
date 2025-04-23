@@ -19,6 +19,10 @@ class ProjetoRequest(BaseModel):
 def read_root():
     return {"message": "Bem vindo ao CrewAI do CodeSprint"}
 
+@app.get("/health")
+def health_check():
+    return {"messagem": "CrewAI está funcionando corretamente"}
+
 @app.post("/gerar-projeto")
 def gerar_projeto(req: ProjetoRequest):
     descricao_final = req.descricao
