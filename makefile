@@ -39,3 +39,13 @@ down_crewai: ## Stop crewai container
 	@echo "${BLUE}Parando container crewai...${NC}"
 	docker compose down crewai
 	@echo "${GREEN}Container Crewai Encerrado!${NC}"
+
+
+env_backend:
+	$(poetry env activate backend)
+
+env_crewai:
+	$(poetry env activate crewai)
+
+env_desactivate:
+	deactivate
