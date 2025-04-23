@@ -25,6 +25,13 @@
 	}, 
 	"containerEnv": {
 		"POETRY_VIRTUALLENVS_IN_PROJECT": "1"
+	},
+	"customizations": {
+		"vscode": {
+		"extensions": [
+			"tamasfe.even-better-toml"
+		]
+		}
 	}
 
 	// Features to add to the dev container. More info: https://containers.dev/features.
