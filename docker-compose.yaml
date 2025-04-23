@@ -12,8 +12,16 @@ services:
     volumes:
       - ./backend:/app
     depends_on:
-      - crewai
-      - redis     
+      crewai:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
     restart: unless-stopped
 
   crewai:
@@ -27,6 +35,12 @@ services:
       - ./crewai/.env
     volumes:
       - ./crewai:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
     # command: tail -f /dev/null
     # restart: unless-stopped
 
