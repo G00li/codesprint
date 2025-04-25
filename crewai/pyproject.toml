@@ -15,6 +15,7 @@ ollama = "^0.4.8"
 uvicorn = {extras = ["standard"], version = "^0.34.2"}
 langchain-community = "^0.3.22"
 pydantic = {extras = ["standard"], version = "^2.11.3"}
+langchain-ollama = "^0.3.2"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
