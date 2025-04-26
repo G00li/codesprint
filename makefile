@@ -1,5 +1,3 @@
-
-
 # Cores para mensagens
 GREEN = \033[0;32m
 BLUE = \033[0;34m
@@ -12,8 +10,8 @@ help: ## Show this help
 
 up: ## Start all containers
 	@echo "${BLUE}Subindo containers...${NC}"
-	docker-compose up -d --build backend crewai
-	@echo "${BLUE}Aguardando backend iniciar...${NC}"
+	docker-compose up -d --build backend crewai frontend
+	@echo "${BLUE}Aguardando serviços iniciar...${NC}"
 
 down: ## Stop all containers
 	@echo "${BLUE}Parando containers...${NC}"
