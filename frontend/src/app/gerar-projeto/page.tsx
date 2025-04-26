@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import ResultadoProjeto from '../components/ResultadoProjeto';
+import React from 'react';
 
 // Interface para os dados do formulário
 interface FormData {
@@ -63,13 +64,13 @@ export default function GerarProjeto() {
   
   // Lidar com mudanças nos campos de texto
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value, type } = e.target as HTMLInputElement;
+    const { name, value, type } = e.target;
     
     if (type === 'checkbox') {
-      const { checked } = e.target as HTMLInputElement;
+      const target = e.target as HTMLInputElement;
       setFormData({
         ...formData,
-        [name]: checked
+        [name]: target.checked
       });
     } else {
       setFormData({
