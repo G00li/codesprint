@@ -23,7 +23,7 @@ Além disso, o sistema utiliza o **Ollama** para executar modelos de linguagem d
 
 1. Clone o repositório:
    ```bash
-   git clone https://github.com/seu-usuario/codesprint.git
+   git clone https://github.com/G00li/codesprint
    cd codesprint
    ```
 
