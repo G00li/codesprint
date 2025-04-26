@@ -7,7 +7,7 @@ from typing import Dict, List, Any, Optional
 class CustomLiteLLM:
     def __init__(self):
         # Configurar variáveis de ambiente para o LiteLLM
-        os.environ["LITELLM_MODEL_NAME"] = "llama3"
+        os.environ["LITELLM_MODEL_NAME"] = "llama3:8b"
         os.environ["LITELLM_API_BASE"] = "http://ollama:11434"  # Usar o nome do serviço do Docker Compose
         os.environ["LITELLM_PROVIDER"] = "ollama"
         os.environ["LITELLM_API_KEY"] = "dummy"
