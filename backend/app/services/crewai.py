@@ -70,7 +70,7 @@ class CrewAiService:
                     response = session.post(
                         f"{self.base_url}/gerar-projeto", 
                         data=json.dumps(payload), 
-                        timeout=300
+                        timeout=1200
                     )
                 
                 logger.info(f"Status code: {response.status_code}")
@@ -103,7 +103,7 @@ class CrewAiService:
                     return error_info
             
             except requests.Timeout:
-                error_msg = "Timeout na conexão com CrewAI (300s)"
+                error_msg = "Timeout na conexão com CrewAI (1200s)"
                 logger.error(error_msg)
                 
                 # Tenta novamente se não for a última tentativa

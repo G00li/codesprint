@@ -23,7 +23,7 @@ class CustomLiteLLM:
         
         # Configurar tentativas para lidar com problemas de conexão
         litellm.num_retries = 3
-        litellm.request_timeout = 120
+        litellm.request_timeout = 1200
         
         # Configurar para usar nossa API local do Ollama
         litellm.api_base = os.environ["LITELLM_API_BASE"]

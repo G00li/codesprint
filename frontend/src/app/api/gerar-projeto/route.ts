@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(payload),
       // Aumenta o timeout para dar tempo ao processamento
-      signal: AbortSignal.timeout(5 * 60 * 1000) // 5 minutos
+      signal: AbortSignal.timeout(20 * 60 * 1000) // 20 minutos
     });
     
     console.log(`Resposta do backend - Status: ${response.status}`);
