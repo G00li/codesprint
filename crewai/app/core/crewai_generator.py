@@ -1,12 +1,11 @@
 from crewai import Agent, Task, Crew
-from langchain_ollama import ChatOllama
+from app.core.llm_client import OllamaLLM
 
-
-# Usando o pacote langchain_ollama mais recente conforme recomendado
-llm = ChatOllama(
-    model="llama3",
-    base_url="http://host.docker.internal:11434"
-)
+# instancia o LLM
+llm = OllamaLLM(
+    model_name="llama3",
+    temperature=0.3
+    )
 
 def create_agents(selected_areas: list[str]):
     """
