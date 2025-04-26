@@ -1,145 +1,121 @@
-# 🚀 CodeSprint
-
-Uma plataforma de desenvolvimento de projetos guiada por IA que ajuda desenvolvedores a iniciar novos projetos rapidamente.
-
-![CodeSprint Banner](https://via.placeholder.com/1200x300?text=CodeSprint)
-
-## 📋 Índice
-- [Sobre o Projeto](#-sobre-o-projeto)
-- [Arquitetura](#-arquitetura-do-sistema)
-- [Funcionalidades](#-funcionalidades)
-- [Requisitos](#-requisitos)
-- [Instalação e Uso](#-instalação-e-uso)
-- [Comandos Make](#-comandos-make)
-- [Estrutura do Projeto](#-estrutura-do-projeto)
-- [Desenvolvimento](#-desenvolvimento)
-- [Licença](#-licença)
+# CodeSprint - Plataforma de Desenvolvimento de Projetos
 
 ## 🔍 Sobre o Projeto
 
 O **CodeSprint** é uma plataforma inovadora que utiliza Inteligência Artificial para acelerar o desenvolvimento de novos projetos. Com uma interface intuitiva e responsiva, desenvolvedores podem especificar suas necessidades e obter um projeto base completo em questão de minutos.
 
-## 🏗️ Arquitetura do Sistema
+## Ferramentas de Diagnóstico
 
-O CodeSprint é composto por quatro componentes principais:
+O CodeSprint inclui diversas ferramentas para diagnóstico de problemas de conectividade entre os serviços.
 
-1. **🖥️ Frontend** - Aplicação Next.js com Tailwind CSS que fornece uma interface responsiva para usuários.
-2. **⚙️ Backend** - Servidor FastAPI que gerencia a comunicação entre o frontend e o serviço CrewAI.
-3. **🧠 CrewAI** - Serviço especializado que utiliza modelos de IA para gerar projetos com base nas entradas do usuário.
-4. **💾 Redis** - Banco de dados em memória usado para cache e gerenciamento de estado.
+### 1. Diagnóstico via Interface Web
 
-Além disso, o sistema utiliza o **🤖 Ollama** para executar modelos de linguagem de grande porte localmente.
+Acesse as ferramentas de diagnóstico pela interface web:
 
-## 🌟 Funcionalidades
+- **Diagnóstico Automático**: http://localhost:3000/diagnostico
+- **Diagnóstico Manual**: http://localhost:3000/diagnostico/manual
 
-- ✨ **Geração de Projetos Personalizados** baseados em:
-  - 📚 Áreas de interesse
-  - 🛠️ Stack tecnológico
-  - 📝 Descrição do projeto
-- 🔄 **Integração** com serviços externos (EXA.ai)
-- 📱 **Interface Responsiva** para todos os dispositivos
-- 🧩 **Fluxo Intuitivo** de criação de projetos
+A ferramenta de diagnóstico manual permite testar a conectividade com qualquer endpoint, facilitando a identificação de problemas específicos.
 
-## 📋 Requisitos
+### 2. Script de Diagnóstico
 
-- 🐳 Docker e Docker Compose
-- 📦 Node.js 18+ (para desenvolvimento local do frontend)
-- 🐍 Python 3.10+ (para desenvolvimento local do backend e CrewAI)
-- 📄 Make (para utilizar os comandos do Makefile)
+Execute o script de diagnóstico para verificar todos os serviços:
 
-## 🚀 Instalação e Uso
-
-### Passo 1: Clone o Repositório
 ```bash
-git clone https://github.com/G00li/codesprint
-cd codesprint
+./check_services.sh
 ```
 
-### Passo 2: Inicialize os Serviços
-Você pode iniciar todos os serviços de uma só vez utilizando o comando Make:
+Este script verifica:
+- Status dos contêineres Docker
+- Conectividade com cada serviço
+- Logs de serviços com problemas
+- Diagnóstico de rede interno
+
+### 3. Endpoints de Diagnóstico no Backend
+
+O backend expõe endpoints específicos para diagnóstico:
+
+- **Health Check**: http://localhost:8000/health
+- **Diagnóstico CrewAI**: http://localhost:8000/diagnose-crewai
+- **Diagnóstico de Rede**: http://localhost:8000/diagnose-network
+
+### 4. Comandos Docker Úteis
+
+Verifique o status e os logs dos serviços:
+
 ```bash
-make up
+# Verificar status dos contêineres
+docker-compose ps
+
+# Ver logs do serviço backend
+docker-compose logs backend
+
+# Ver logs do serviço crewai
+docker-compose logs crewai
+
+# Ver logs do serviço ollama
+docker-compose logs ollama
+
+# Executar diagnóstico de rede interno
+docker-compose exec backend python -m app.services.network_diagnostics
 ```
 
-Ou utilizando Docker Compose diretamente:
+## Conectividade entre Contêineres
+
+Ao usar o sistema em contêineres Docker, lembre-se que:
+
+1. **Nomes de serviços vs Localhost**: 
+   - Use `backend`, `crewai` e `ollama` como nomes de hosts dentro da rede Docker
+   - Use `localhost` apenas quando acessar os serviços de fora dos contêineres
+
+2. **Exemplo de URLs**:
+   - Dentro dos contêineres: `http://backend:8000/health`
+   - Acesso externo: `http://localhost:8000/health`
+
+3. **Variáveis de ambiente**:
+   - A variável `NEXT_PUBLIC_BACKEND_URL` define a URL do backend
+   - O valor padrão nos contêineres é `http://backend:8000`
+   - Ao rodar localmente, defina como `http://localhost:8000`
+
+4. **Testando conectividade**:
+   - Use a ferramenta de diagnóstico manual em http://localhost:3000/diagnostico/manual
+   - Ao testar dentro dos contêineres, use os nomes dos serviços (`backend`, `crewai`, etc.)
+
+## Resolução de Problemas Comuns
+
+### Erro de Conexão Recusada (Connection Refused)
+
+Isso geralmente indica que o serviço não está rodando ou não está acessível na porta configurada.
+
+**Solução**: Verifique se o contêiner está em execução com `docker-compose ps` e analise os logs com `docker-compose logs [serviço]`.
+
+### Erro 500 do CrewAI
+
+Se o backend consegue se comunicar com o CrewAI, mas recebe um erro 500, geralmente é um problema com o modelo do Ollama.
+
+**Solução**: Verifique se o Ollama está rodando e se o modelo especificado está disponível:
+
 ```bash
-docker-compose up -d
+# Verificar status do Ollama
+docker-compose logs ollama
+
+# Verificar a comunicação Ollama-CrewAI
+docker-compose exec backend python -m app.test_crewai_connection
 ```
 
-### Passo 3: Acesse a Aplicação
-Após a inicialização, acesse o frontend em [http://localhost:3000](http://localhost:3000)
+### Timeout em Requisições
 
-## 🛠️ Comandos Make
+Timeouts podem ocorrer quando o Ollama está carregando o modelo pela primeira vez, o que pode levar alguns minutos.
 
-O projeto inclui um Makefile para facilitar operações comuns:
+**Solução**: Aguarde alguns minutos após iniciar os serviços e tente novamente. Verifique os logs do Ollama para acompanhar o progresso.
 
-| Comando | Descrição |
-|---------|-----------|
-| `make help` | Exibe ajuda sobre os comandos disponíveis |
-| `make up` | Inicia todos os containers do projeto |
-| `make down` | Para todos os containers |
-| `make restart` | Reinicia todos os containers |
-| `make clean` | Remove todos os containers e volumes |
-| `make up_crewai` | Inicia apenas o container CrewAI |
-| `make down_crewai` | Para o container CrewAI |
-| `make env_backend` | Ativa o ambiente Poetry do backend |
-| `make env_crewai` | Ativa o ambiente Poetry do CrewAI |
-| `make env_desactivate` | Desativa o ambiente Poetry atual |
+### Erro "Failed to fetch" no Frontend
 
-## 📁 Estrutura do Projeto
+Esse erro geralmente ocorre quando o frontend tenta acessar o backend usando `localhost` em vez do nome do serviço Docker.
 
-```
-codesprint/
-├── 🖥️ frontend/            # Aplicação Next.js com Tailwind
-│   ├── src/                # Código fonte do frontend
-│   ├── public/             # Arquivos estáticos
-│   └── Dockerfile          # Configuração do container
-├── ⚙️ backend/             # API FastAPI
-│   ├── app/                # Código fonte do backend
-│   └── Dockerfile          # Configuração do container
-├── 🧠 crewai/              # Serviço de IA para geração de projetos
-│   ├── app/                # Código fonte do serviço CrewAI
-│   └── Dockerfile          # Configuração do container
-├── 📄 docker-compose.yaml  # Configuração dos serviços Docker
-├── 📄 makefile             # Scripts e comandos úteis
-└── 📄 README.md            # Documentação do projeto
-```
-
-## 💻 Desenvolvimento
-
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev
-```
-
-### Backend
-```bash
-cd backend
-poetry install
-poetry run uvicorn app.main:app --reload
-```
-
-### CrewAI
-```bash
-cd crewai
-poetry install
-poetry run uvicorn app.main:app --reload --port 8004
-```
-
-## 🔄 Fluxo de Funcionamento
-
-1. O usuário acessa a interface do frontend e especifica os detalhes do projeto desejado
-2. O backend recebe essas informações e as envia para o serviço CrewAI
-3. O CrewAI utiliza modelos de IA (via Ollama) para gerar o esqueleto do projeto
-4. O resultado é retornado ao usuário através do frontend
-5. O usuário pode baixar o projeto gerado ou solicitar ajustes
-
-## 📄 Licença
-
-Este projeto está licenciado sob os termos da [MIT License](LICENSE).
-
----
+**Solução**: 
+1. Verifique se a configuração da URL do backend está correta no frontend
+2. Use o diagnóstico manual para testar com a URL correta (`http://backend:8000/...`)
+3. Reinicie o contêiner frontend após modificar variáveis de ambiente: `docker-compose restart frontend`
 
 Desenvolvido com ❤️ pelo time CodeSprint

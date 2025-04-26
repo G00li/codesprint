@@ -1,12 +1,14 @@
 from crewai import Agent, Task, Crew
 from app.core.llm_client import OllamaLLM
+# Importa o adaptador LiteLLM
+from app.core.litellm_adapter import llm_adapter
 
 # instancia o LLM
 llm = OllamaLLM(
-    model_name="llama3",
+    model_name="ollama/llama3:8b",
     temperature=0.3
     )
-
+    
 def create_agents(selected_areas: list[str]):
     """
     Cria agentes baseados nas áreas selecionadas pelo usuário.
@@ -345,116 +347,242 @@ def create_agents(selected_areas: list[str]):
 
 def run_project_pipeline(area_selection: list[str], tech_stack: str, description: str):
     # Adiciona o tech stack à descrição para melhor contextualização
-    full_description = f"""
-    Descrição do Projeto: {description}
-    
-    Tecnologias Desejadas: {tech_stack}
-    
-    Áreas Selecionadas: {', '.join(area_selection)}
-    """
-    
-    agents = create_agents(area_selection)
-
-    tasks = []
-    previous_output = full_description
-
-    for i, agent in enumerate(agents):
-        # O primeiro agente recebe a descrição completa
-        if i == 0:
-            task_description = f"""
-            Baseado na descrição do projeto:
-            {full_description}
-            
-            Forneça sua análise e recomendações específicas para sua área de expertise.
-            """
-        # Agentes intermediários recebem a saída do agente anterior
-        else:
-            task_description = f"""
-            Baseado na análise anterior:
-            {previous_output}
-            
-            E na descrição original do projeto:
-            {full_description}
-            
-            Forneça sua análise e recomendações específicas para sua área de expertise.
-            """
+    try:
+        import logging
+        import threading
+        import time
         
-        # O último agente (project manager) recebe instruções para integrar tudo
-        if i == len(agents) - 1:
-            task_description = f"""
-            Baseado em todas as análises anteriores e na descrição original:
-            {full_description}
+        logger = logging.getLogger("crewai_generator")
+        
+        logger.info(f"Iniciando geração do projeto com áreas: {area_selection}, tecnologias: {tech_stack}")
+        
+        # Validar os inputs
+        if not area_selection or not isinstance(area_selection, list):
+            logger.error("Área de seleção inválida ou vazia")
+            return {
+                "error": "Erro ao gerar o projeto",
+                "erro_detalhes": "Área de seleção inválida ou vazia"
+            }
             
-            Crie um plano de projeto integrado e coeso que inclua:
-            1. Resumo executivo do projeto
-            2. Arquitetura proposta
-            3. Estrutura de diretórios recomendada
-            4. Lista de tecnologias e bibliotecas
-            5. Roadmap de desenvolvimento com tarefas priorizadas
-            6. Exemplos de código para partes cruciais
-            7. Recursos e referências para o desenvolvedor
+        if not tech_stack or not isinstance(tech_stack, str):
+            logger.error("Stack de tecnologias inválida ou vazia")
+            return {
+                "error": "Erro ao gerar o projeto",
+                "erro_detalhes": "Stack de tecnologias inválida ou vazia"
+            }
             
-            Formate as seções com clareza usando Markdown.
-            """
-            
-            expected_output = """
-            # Plano de Projeto Completo
-            
-            ## Resumo Executivo
-            [resumo do projeto]
-            
-            ## Arquitetura Proposta
-            [diagrama textual da arquitetura]
-            
-            ## Estrutura de Diretórios
-            ```
-            [estrutura de pastas e arquivos]
-            ```
-            
-            ## Tecnologias e Bibliotecas
-            [lista detalhada]
-            
-            ## Roadmap de Desenvolvimento
-            [lista de tarefas com prioridades]
-            
-            ## Exemplos de Código
-            ```
-            [exemplos relevantes]
-            ```
-            
-            ## Recursos e Referências
-            [links e recursos úteis]
-            """
-        else:
-            expected_output = "Análise detalhada e recomendações específicas para a próxima etapa"
+        if not description or not isinstance(description, str):
+            logger.error("Descrição inválida ou vazia")
+            return {
+                "error": "Erro ao gerar o projeto", 
+                "erro_detalhes": "Descrição inválida ou vazia"
+            }
+        
+        full_description = f"""
+        Descrição do Projeto: {description}
+        
+        Tecnologias Desejadas: {tech_stack}
+        
+        Áreas Selecionadas: {', '.join(area_selection)}
+        """
+        
+        # Verificar se o LLM está funcionando
+        try:
+            logger.info("Verificando se o LLM está acessível...")
+            from app.core.llm_client import OllamaLLM
+            test_llm = OllamaLLM()
+            test_response = test_llm.generate("Olá, este é um teste de conexão. Responda apenas com 'OK' se estiver funcionando.")
+            logger.info(f"Resposta do teste do LLM: {test_response[:50]}...")
+        except Exception as e:
+            logger.error(f"Erro ao testar o LLM: {str(e)}")
+            return {
+                "error": "Erro ao comunicar com o modelo de linguagem",
+                "erro_detalhes": str(e)
+            }
+        
+        agents = create_agents(area_selection)
+        logger.info(f"Agentes criados: {len(agents)}")
 
-        task = Task(
-            description=task_description,
-            expected_output=expected_output,
-            agent=agent
-        )
-        tasks.append(task)
-        previous_output = task.expected_output  # simula encadeamento
+        tasks = []
+        previous_output = full_description
 
-    crew = Crew(
-        tasks=tasks,
-        agents=agents,
-        verbose=True
-    )
+        # Criar as tarefas com timeout e tratamento de erros apropriados
+        for i, agent in enumerate(agents):
+            # O primeiro agente recebe a descrição completa
+            if i == 0:
+                task_description = f"""
+                Baseado na descrição do projeto:
+                {full_description}
+                
+                Forneça sua análise e recomendações específicas para sua área de expertise.
+                """
+            # Agentes intermediários recebem a saída do agente anterior
+            else:
+                task_description = f"""
+                Baseado na análise anterior:
+                {previous_output}
+                
+                E na descrição original do projeto:
+                {full_description}
+                
+                Forneça sua análise e recomendações específicas para sua área de expertise.
+                """
+            
+            # O último agente (project manager) recebe instruções para integrar tudo
+            if i == len(agents) - 1:
+                task_description = f"""
+                Baseado em todas as análises anteriores e na descrição original:
+                {full_description}
+                
+                Crie um plano de projeto integrado e coeso que inclua:
+                1. Resumo executivo do projeto
+                2. Arquitetura proposta
+                3. Estrutura de diretórios recomendada
+                4. Lista de tecnologias e bibliotecas
+                5. Roadmap de desenvolvimento com tarefas priorizadas
+                6. Exemplos de código para partes cruciais
+                7. Recursos e referências para o desenvolvedor
+                
+                Formate as seções com clareza usando Markdown.
+                """
+                
+                expected_output = """
+                # Plano de Projeto Completo
+                
+                ## Resumo Executivo
+                [resumo do projeto]
+                
+                ## Arquitetura Proposta
+                [diagrama textual da arquitetura]
+                
+                ## Estrutura de Diretórios
+                ```
+                [estrutura de pastas e arquivos]
+                ```
+                
+                ## Tecnologias e Bibliotecas
+                [lista detalhada]
+                
+                ## Roadmap de Desenvolvimento
+                [lista de tarefas com prioridades]
+                
+                ## Exemplos de Código
+                ```
+                [exemplos relevantes]
+                ```
+                
+                ## Recursos e Referências
+                [links e recursos úteis]
+                """
+            else:
+                expected_output = "Análise detalhada e recomendações específicas para a próxima etapa"
 
-    result = crew.kickoff()
-    
-    # Processa o resultado para um formato mais estruturado
-    processed_result = {
-        "resumo": extract_section(result, "Resumo Executivo"),
-        "tecnologias": tech_stack,
-        "areas": area_selection,
-        "estrutura": extract_section(result, "Estrutura de Diretórios"),
-        "codigo": extract_section(result, "Exemplos de Código"),
-        "recursos": extract_resources(extract_section(result, "Recursos e Referências"))
-    }
-    
-    return processed_result
+            task = Task(
+                description=task_description,
+                expected_output=expected_output,
+                agent=agent
+            )
+            tasks.append(task)
+            previous_output = task.expected_output  # simula encadeamento
+
+        logger.info(f"Tarefas criadas: {len(tasks)}")
+        logger.info("Iniciando a execução da crew...")
+        
+        # Definir timeout usando threading em vez de signal
+        result = None
+        error = None
+        
+        # Variável para controlar se o processamento foi concluído
+        processing_completed = False
+        
+        # Função que será executada em uma thread separada
+        def run_crew():
+            nonlocal result, error, processing_completed
+            try:
+                crew = Crew(
+                    tasks=tasks,
+                    agents=agents,
+                    verbose=True
+                )
+                result = crew.kickoff()
+                logger.info("Crew completou a execução com sucesso.")
+                processing_completed = True
+            except Exception as e:
+                logger.error(f"Erro durante a execução da crew: {str(e)}")
+                error = str(e)
+                processing_completed = True
+        
+        # Iniciar a thread para processamento
+        processing_thread = threading.Thread(target=run_crew)
+        processing_thread.daemon = True  # Permitir que o programa termine mesmo se a thread estiver rodando
+        processing_thread.start()
+        
+        # Esperar pelo término do processamento com timeout
+        timeout = 300  # 5 minutos em segundos
+        start_time = time.time()
+        
+        while not processing_completed and (time.time() - start_time) < timeout:
+            time.sleep(1)  # Verificar a cada segundo
+        
+        # Verificar se houve timeout
+        if not processing_completed:
+            logger.error("Timeout na execução da crew")
+            return {
+                "error": "Tempo limite excedido",
+                "erro_detalhes": "A geração do projeto demorou muito tempo e foi interrompida."
+            }
+        
+        # Verificar se houve erro
+        if error:
+            return {
+                "error": "Erro durante execução da crew",
+                "erro_detalhes": error
+            }
+        
+        # Se não temos resultado, algo deu errado
+        if result is None:
+            return {
+                "error": "Erro desconhecido",
+                "erro_detalhes": "A execução foi concluída, mas não retornou resultado."
+            }
+        
+        # Processa o resultado para um formato mais estruturado
+        try:
+            processed_result = {
+                "resumo": extract_section(result, "Resumo Executivo"),
+                "tecnologias": tech_stack,
+                "areas": area_selection,
+                "estrutura": extract_section(result, "Estrutura de Diretórios"),
+                "codigo": extract_section(result, "Exemplos de Código"),
+                "recursos": extract_resources(extract_section(result, "Recursos e Referências"))
+            }
+            
+            # Verifica se o resultado contém as seções essenciais
+            if not processed_result["resumo"] or not processed_result["estrutura"]:
+                logger.warning("Resultado não contém todas as seções esperadas")
+                
+            logger.info("Resultado processado com sucesso")
+            return processed_result
+        except Exception as e:
+            logger.error(f"Erro ao processar o resultado: {str(e)}")
+            return {
+                "error": "Erro ao processar resultado",
+                "erro_detalhes": str(e),
+                "resultado_bruto": result
+            }
+    except Exception as e:
+        import traceback
+        error_traceback = traceback.format_exc()
+        import logging
+        logger = logging.getLogger("crewai_generator")
+        logger.error(f"Erro durante a geração do projeto: {str(e)}\n{error_traceback}")
+        
+        # Retornar uma resposta de erro estruturada
+        return {
+            "error": "Erro ao gerar o projeto",
+            "erro_detalhes": str(e),
+            "traceback": error_traceback
+        }
 
 def extract_section(text, section_name):
     """Extrai uma seção específica do resultado"""

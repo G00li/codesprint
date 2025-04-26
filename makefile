@@ -9,9 +9,15 @@ help: ## Show this help
 
 
 up: ## Start all containers
+	@echo "${BLUE}Rebuildando containers...${NC}"
+	docker-compose build
 	@echo "${BLUE}Subindo containers...${NC}"
-	docker-compose up -d --build backend crewai frontend
+	docker-compose up -d
 	@echo "${BLUE}Aguardando serviços iniciar...${NC}"
+	sleep 10
+	@echo "${BLUE}Verificando status dos serviços...${NC}"
+	docker-compose ps
+	@echo "${GREEN}Todos os serviços foram iniciados com sucesso!${NC}"
 
 down: ## Stop all containers
 	@echo "${BLUE}Parando containers...${NC}"

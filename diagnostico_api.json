@@ -1,0 +1,1 @@
+{"config":{"backendUrl":"http://localhost:8000","nodeEnv":"development"},"tests":[{"name":"Conexão com backend","status":"error","error":"fetch failed"},{"name":"Conexão com CrewAI","status":"error","error":"fetch failed"},{"name":"Diagnóstico completo de rede","status":"error","error":"fetch failed"}]}
