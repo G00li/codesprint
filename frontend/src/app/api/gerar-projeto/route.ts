@@ -25,25 +25,36 @@ export async function POST(request: NextRequest) {
       usar_exa: !!body.usar_exa
     };
     
-    // URL do backend configurada via variável de ambiente
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:8000';
+    // URL do backend configurada via variável de ambiente ou usando o nome do serviço Docker
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://backend:8000';
+    const endpoint = `${backendUrl}/gerar-projeto`;
+    
+    console.log(`Enviando requisição para: ${endpoint}`);
+    console.log('Payload:', JSON.stringify(payload));
     
     // Faz a requisição para o backend
-    const response = await fetch(`${backendUrl}/gerar-projeto`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(payload)
+      body: JSON.stringify(payload),
+      // Aumenta o timeout para dar tempo ao processamento
+      signal: AbortSignal.timeout(20 * 60 * 1000) // 20 minutos
     });
+    
+    console.log(`Resposta do backend - Status: ${response.status}`);
     
     // Pega a resposta do backend
     const data = await response.json();
     
+    console.log('Dados recebidos:', JSON.stringify(data).substring(0, 200) + '...');
+    
     // Se o backend retornar um erro
     if (!response.ok) {
+      console.error('Erro retornado pelo backend:', data.error || 'Erro desconhecido');
       return NextResponse.json(
-        { error: data.error || 'Erro ao comunicar com o backend' },
+        { error: data.error || 'Erro ao comunicar com o backend', details: data.details || '' },
         { status: response.status }
       );
     }
@@ -54,7 +65,8 @@ export async function POST(request: NextRequest) {
     console.error('Erro ao processar requisição:', error);
     
     // Para desenvolvimento, retorna um projeto dummy para testes de UI
-    if (process.env.NODE_ENV === 'development') {
+    if (process.env.NODE_ENV === 'development' && !process.env.NEXT_PUBLIC_BACKEND_URL) {
+      console.warn('Usando dados de exemplo porque o backend não está disponível');
       return NextResponse.json({
         resultado: {
           resumo: "Este é um projeto de exemplo para desenvolvimento da UI. Os dados foram gerados localmente porque não foi possível conectar ao backend.",
@@ -110,8 +122,9 @@ function ExampleComponent() {
       });
     }
     
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return NextResponse.json(
-      { error: 'Ocorreu um erro ao processar sua solicitação' },
+      { error: 'Ocorreu um erro ao processar sua solicitação', details: errorMessage },
       { status: 500 }
     );
   }

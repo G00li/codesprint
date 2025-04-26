@@ -5,39 +5,37 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+    networks:
+      - crewai-network
     ports:
       - "3000:3000"
     volumes:
-      - ./frontend:/app
-      - /app/node_modules
+      - ./frontend/src:/app/src
+      - ./frontend/public:/app/public
     environment:
       - BACKEND_URL=http://backend:8000
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     restart: unless-stopped
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
+    networks:
+      - crewai-network
     ports:
       - "8000:8000"
     env_file: 
       - ./backend/.env
+    environment:
+      LITELLM_MODEL_URL: http://ollama:11434
+      CREWAI_BASE_URL: http://crewai:8004
     volumes:
       - ./backend:/app
     depends_on:
-      crewai:
-        condition: service_healthy
-      redis:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
+      - crewai
+      - redis
     restart: unless-stopped
 
   crewai:
@@ -47,9 +45,10 @@ services:
     
     ports:
       - "8004:8004"
-
+    networks:
+      - crewai-network
     environment:
-      - LITELLM_MODEL_NAME=llama3
+      - LITELLM_MODEL_NAME=llama3:8b
       - LITELLM_API_BASE=http://ollama:11434
       - LITELLM_API_KEY=dummy
       - LITELLM_PROVIDER=ollama
@@ -59,16 +58,8 @@ services:
     volumes:
       - ./crewai:/app
     depends_on:
-      ollama:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8004/health"]
-      interval: 5s
-      timeout: 3s
-      retries: 10
-
-    # command: tail -f /dev/null
-    # restart: unless-stopped
+      - ollama
+    restart: unless-stopped
 
   redis:
     image: redis:alpine
@@ -76,11 +67,6 @@ services:
       - "6379:6379"
     volumes:
       - redis_data:/data
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
 
   ollama:
@@ -89,14 +75,14 @@ services:
       - "11434:11434"
     volumes:
       - ollama_data:/root/.ollama
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:11434/api/version"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
+    networks:
+      - crewai-network
     restart: unless-stopped
+    entrypoint: ollama serve
 
+networks:
+  crewai-network:
+    driver: bridge
 
 volumes:
   redis_data:
