@@ -2,8 +2,21 @@
 
 import { useState } from 'react';
 
+interface ResultadoDados {
+  resumo?: string;
+  tecnologias?: string;
+  areas?: string[];
+  estrutura?: string;
+  codigo?: string;
+  recursos?: string[];
+}
+
 interface ResultadoProjetoProps {
-  resultado: any;
+  resultado: {
+    resultado?: ResultadoDados;
+    error?: string;
+    details?: string;
+  } | ResultadoDados;
   onNovoClick: () => void;
 }
 
@@ -15,9 +28,10 @@ export default function ResultadoProjeto({ resultado, onNovoClick }: ResultadoPr
     return null;
   }
   
-  // Extrai os dados do resultado (assumindo que seja um objeto JSON com estrutura)
-  // A estrutura exata pode variar dependendo do retorno da API
-  const dados = resultado.resultado || resultado;
+  // Extrai os dados do resultado (considerando ambos os formatos possíveis)
+  const dados: ResultadoDados = 'resultado' in resultado && resultado.resultado 
+    ? resultado.resultado 
+    : resultado as ResultadoDados;
   
   return (
     <div className="card p-8 shadow-lg transition-all duration-300 animate-slide-up">

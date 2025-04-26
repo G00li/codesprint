@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import ResultadoProjeto from '../components/ResultadoProjeto';
 
 // Interface para os dados do formulário
@@ -14,14 +13,19 @@ interface FormData {
 
 // Interface para a resposta da API
 interface ProjetoResponse {
-  resultado?: any;
+  resultado?: {
+    resumo?: string;
+    tecnologias?: string;
+    areas?: string[];
+    estrutura?: string;
+    codigo?: string;
+    recursos?: string[];
+  };
   error?: string;
   details?: string;
 }
 
 export default function GerarProjeto() {
-  const router = useRouter();
-  
   // Lista de áreas disponíveis
   const areasDisponiveis = [
     'Web', 'Mobile', 'Desktop', 'API',
