@@ -4,12 +4,15 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
     gcc \
+    tzdata \
     && rm -rf /var/lib/apt/lists/*
+
+ENV TZ=Europe/Lisbon
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 ENV POETRY_VERSION=1.8.2
 RUN curl -sSL https://install.python-poetry.org | python3 -
 
-# Adiciona o poetry no PATH
 ENV PATH="/root/.local/bin:$PATH"
 
 RUN poetry config virtualenvs.create false
