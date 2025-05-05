@@ -1,6 +1,5 @@
 from crewai import Agent, Task, Crew
 from app.core.llm_client import OllamaLLM
-# Importa o adaptador LiteLLM
 from app.core.litellm_adapter import llm_adapter
 import logging
 import threading
@@ -129,6 +128,7 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
     """
     Pipeline otimizado para gerar projeto mais rapidamente
     """
+    pm_result = None
     try:
         logger.info(f"Iniciando geração do projeto com áreas: {area_selection}, tecnologias: {tech_stack}")
         
@@ -152,7 +152,7 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
         project_manager = agents[1]
         
         # Definir timeout geral
-        overall_timeout = 60  # segundos para todo o processo
+        overall_timeout = 90  # segundos para todo o processo
         start_time = time.time()
         
         # Executar especialista primeiro - com prompt simplificado
@@ -190,42 +190,75 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
         
         # Executar gerente com resultado do especialista - prompt simplificado
         pm_task = f"""
-        Com base na análise técnica:
-        
+        Com base na análise técnica abaixo:
+
         {specialist_result.get('result', 'N/A')}
-        
+
         E na descrição do projeto:
+
         {full_description}
-        
-        Crie um plano de projeto no seguinte formato:
-        
+
+        Crie um plano de projeto no formato abaixo, **seguindo rigorosamente os títulos e a estrutura indicada**. 
+        **Não adicione ou remova seções**. **Use exatamente os nomes de seção a seguir.**
+
+        ---
+
         # Resumo do Projeto
-        [Um parágrafo conciso descrevendo o projeto]
-        
+        [Um parágrafo conciso descrevendo o projeto. Exemplo: "Este projeto visa desenvolver uma aplicação full-stack para gestão de tarefas usando React no frontend e FastAPI no backend."]
+
         # Estrutura do Projeto
-        [Estrutura de diretórios e arquivos]
-        
-        # Tecnologias
-        [Lista de tecnologias principais]
-        
+        - /frontend
+        - index.html
+        - app.js
+        - /backend
+        - main.py
+        - requirements.txt
+
+        # Tecnologias Recomendadas
+        - React
+        - FastAPI
+        - PostgreSQL
+
         # Próximos Passos
-        [Lista de próximos passos]
+        - Criar repositório no GitHub
+        - Configurar estrutura inicial
+        - Definir endpoints principais da API
+
+        ---
+
+        **IMPORTANTE:**
+        - Mantenha a ordem e os títulos exatamente como estão.
+        - Use `N/A` se não souber a resposta para uma seção.
+        - Não insira explicações extras fora das seções.
         """
-        
-        pm_result = execute_task_directly(project_manager, pm_task, "Plano de projeto")
-        
-        # Verificar resultado e formatar resposta (simplificada)
-        result_text = pm_result.get('result', specialist_result.get('result', 'Não foi possível gerar resultado completo'))
-        
-        # Processa o resultado para um formato simplificado
-        try:
-            processed_result = {
-                "resumo": extract_section(result_text, "Resumo") or result_text[:250],
+        if time.time() - start_time > overall_timeout:
+        # Se demorou demais, retornar resultado parcial
+            return {
+                "resumo": f"Análise básica com {tech_stack}",
                 "tecnologias": tech_stack,
                 "areas": area_selection,
-                "estrutura": extract_section(result_text, "Estrutura") or f"Estrutura padrão para {tech_stack}",
-                "codigo": extract_section(result_text, "Código") or "",
+                "estrutura": f"Estrutura padrão para projeto com {tech_stack}",
+                "codigo": "",
                 "recursos": []
+            }
+
+        pm_result = execute_task_directly(project_manager, pm_task, "Plano de projeto estruturado")
+
+        # Verificar resultado e formatar resposta (simplificada)
+        result_text = (
+            pm_result.get('result') if pm_result and pm_result.get('result')
+            else specialist_result.get('result', 'Não foi possível gerar resultado completo')
+        )
+
+        
+        try:
+            processed_result = {
+                "resumo": extract_section(result_text, "Resumo do Projeto") or result_text[:250],
+                "tecnologias": tech_stack,
+                "areas": area_selection,
+                "estrutura": extract_section(result_text, "Estrutura do Projeto") or f"Estrutura padrão para {tech_stack}",
+                "codigo": "",  # Se quiser gerar código, adicione seção no prompt e extraia aqui
+                "recursos": extract_resources(extract_section(result_text, "Próximos Passos"))
             }
                 
             logger.info("Resultado processado com sucesso")
