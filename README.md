@@ -4,7 +4,62 @@
 
 O **CodeSprint** é uma plataforma inovadora que utiliza Inteligência Artificial para acelerar o desenvolvimento de novos projetos. Com uma interface intuitiva e responsiva, desenvolvedores podem especificar suas necessidades e obter um projeto base completo em questão de minutos.
 
-## Ferramentas de Diagnóstico
+## 🛠️ Arquitetura do Sistema
+
+O CodeSprint é composto por vários serviços interconectados:
+
+- **Frontend**: Interface de usuário React/Next.js (porta 3000)
+- **Backend**: API REST em Python/FastAPI (porta 8000)
+- **CrewAI**: Serviço de orquestração de IA (porta 8004)
+- **Ollama**: Serviço de execução de modelos de linguagem (porta 11434)
+- **Redis**: Cache e filas de tarefas (porta 6379)
+
+Os serviços se comunicam entre si através de uma rede Docker dedicada.
+
+## 📋 Requisitos
+
+- Docker e Docker Compose
+- 8GB+ de RAM disponível
+- 20GB+ de espaço em disco
+- Conexão estável com a internet (para download inicial dos modelos)
+
+## 🚀 Instalação e Execução
+
+### Instalação Rápida
+
+```bash
+# Clone o repositório
+git clone https://github.com/seu-usuario/codesprint.git
+cd codesprint
+
+# Inicie os serviços (com download automático do modelo LLM)
+./start_services.sh
+```
+
+### Usando Makefile
+
+```bash
+# Inicia todos os contêineres
+make up
+
+# Para todos os contêineres
+make down
+
+# Reinicia todos os contêineres
+make restart
+
+# Limpa ambiente (remove contêineres e volumes)
+make clean
+```
+
+### Verificação da Instalação
+
+```bash
+# Verifica o status dos serviços
+./check_services.sh
+```
+
+## 🔧 Ferramentas de Diagnóstico
 
 O CodeSprint inclui diversas ferramentas para diagnóstico de problemas de conectividade entre os serviços.
 
@@ -39,7 +94,17 @@ O backend expõe endpoints específicos para diagnóstico:
 - **Diagnóstico CrewAI**: http://localhost:8000/diagnose-crewai
 - **Diagnóstico de Rede**: http://localhost:8000/diagnose-network
 
-### 4. Comandos Docker Úteis
+### 4. Script de Correção de Conectividade
+
+Para corrigir problemas comuns de conectividade:
+
+```bash
+./fix_connection.sh
+```
+
+Este script detecta e corrige automaticamente problemas de configuração entre os serviços.
+
+### 5. Comandos Docker Úteis
 
 Verifique o status e os logs dos serviços:
 
@@ -60,7 +125,7 @@ docker-compose logs ollama
 docker-compose exec backend python -m app.services.network_diagnostics
 ```
 
-## Conectividade entre Contêineres
+## 🔄 Conectividade entre Contêineres
 
 Ao usar o sistema em contêineres Docker, lembre-se que:
 
@@ -81,7 +146,7 @@ Ao usar o sistema em contêineres Docker, lembre-se que:
    - Use a ferramenta de diagnóstico manual em http://localhost:3000/diagnostico/manual
    - Ao testar dentro dos contêineres, use os nomes dos serviços (`backend`, `crewai`, etc.)
 
-## Resolução de Problemas Comuns
+## 🚨 Resolução de Problemas Comuns
 
 ### Erro de Conexão Recusada (Connection Refused)
 
@@ -118,4 +183,54 @@ Esse erro geralmente ocorre quando o frontend tenta acessar o backend usando `lo
 2. Use o diagnóstico manual para testar com a URL correta (`http://backend:8000/...`)
 3. Reinicie o contêiner frontend após modificar variáveis de ambiente: `docker-compose restart frontend`
 
+## 📊 Monitoramento e Desempenho
+
+### Verificação de Recursos
+
+Para monitorar o uso de recursos pelos contêineres:
+
+```bash
+docker stats
+```
+
+### Verificação de Modelos Ollama
+
+Para verificar os modelos disponíveis no Ollama:
+
+```bash
+docker exec -it codesprint-ollama-1 ollama list
+```
+
+### Download Manual de Modelos
+
+Para baixar manualmente o modelo LLM usado pelo sistema:
+
+```bash
+docker exec -it codesprint-ollama-1 ollama pull llama3:8b
+```
+
+## 📚 Documentação Adicional
+
+Consulte estes arquivos para informações específicas:
+
+- `CHANGELOG.md`: Histórico de alterações e melhorias no sistema
+- `backend/README_TROUBLESHOOTING.md`: Guia detalhado de solução de problemas
+
+## 🧪 Desenvolvimento e Contribuição
+
+Para contribuir com o projeto:
+
+1. Escolha uma issue aberta ou crie uma nova
+2. Faça fork do repositório
+3. Crie um branch para sua feature (`git checkout -b feature/nome-da-feature`)
+4. Implemente suas alterações
+5. Execute os testes necessários
+6. Faça commit das alterações (`git commit -am 'Adiciona nova feature'`)
+7. Faça push para o branch (`git push origin feature/nome-da-feature`)
+8. Abra um Pull Request
+
+## 📄 Licença
+
 Desenvolvido com ❤️ pelo time CodeSprint
+
+[Incluir informações de licença se aplicável]
