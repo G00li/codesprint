@@ -63,39 +63,6 @@ export default function ResultadoProjeto({ resultado, onNovoClick }: ResultadoPr
     return texto.trim();
   };
 
-  // Função auxiliar para formatar a estrutura
-  const formatarEstrutura = (estrutura: string | undefined) => {
-    if (!estrutura) {
-      console.warn('ResultadoProjeto - Estrutura não disponível');
-      return "Estrutura não disponível";
-    }
-    console.log('ResultadoProjeto - Formatando estrutura:', estrutura.substring(0, 100));
-    return estrutura.split('\n').map((linha, index) => (
-      <div key={index} className="text-gray-300">{linha}</div>
-    ));
-  };
-
-  // Função auxiliar para formatar recursos
-  const formatarRecursos = (recursos: string[] | undefined) => {
-    if (!recursos || !Array.isArray(recursos) || recursos.length === 0) {
-      console.warn('ResultadoProjeto - Nenhum recurso disponível');
-      return (
-        <li className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700">
-          <span className="text-gray-700 dark:text-gray-300">Nenhum recurso adicional disponível</span>
-        </li>
-      );
-    }
-    console.log('ResultadoProjeto - Formatando recursos:', recursos);
-    return recursos.map((recurso: string, index: number) => (
-      <li key={index} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 flex items-start">
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-amber-500 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-        </svg>
-        <span className="text-gray-700 dark:text-gray-300">{recurso}</span>
-      </li>
-    ));
-  };
-
   // Log quando a tab muda
   const handleTabChange = (tab: string) => {
     console.log('ResultadoProjeto - Mudando para tab:', tab);
@@ -148,21 +115,6 @@ export default function ResultadoProjeto({ resultado, onNovoClick }: ResultadoPr
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
             Estrutura
-          </div>
-        </button>
-        <button
-          className={`px-4 py-3 font-medium text-sm transition-all duration-200 border-b-2 ${
-            activeTab === 'codigo'
-              ? 'border-purple-500 text-purple-600 dark:text-purple-400'
-              : 'border-transparent text-gray-500 hover:text-purple-500 dark:text-gray-400 dark:hover:text-purple-400'
-          }`}
-          onClick={() => handleTabChange('codigo')}
-        >
-          <div className="flex items-center">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-            </svg>
-            Código
           </div>
         </button>
         <button
@@ -228,7 +180,17 @@ export default function ResultadoProjeto({ resultado, onNovoClick }: ResultadoPr
                   </svg>
                   Tecnologias
                 </h4>
-                <p className="text-gray-700 dark:text-gray-300">{formatarTexto(dados.tecnologias)}</p>
+                <div className="prose dark:prose-invert max-w-none">
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={{
+                      ul: ({...props}) => <ul className="list-disc pl-6" {...props} />,
+                      li: ({...props}) => <li className="text-gray-700 dark:text-gray-300" {...props} />,
+                    }}
+                  >
+                    {formatarTexto(dados.tecnologias)}
+                  </ReactMarkdown>
+                </div>
               </div>
               <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-100 dark:border-green-800">
                 <h4 className="font-semibold text-green-800 dark:text-green-400 mb-2 flex items-center">
@@ -256,28 +218,17 @@ export default function ResultadoProjeto({ resultado, onNovoClick }: ResultadoPr
               </svg>
               Estrutura do Projeto
             </h3>
-            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono leading-relaxed">
-              {formatarEstrutura(dados.estrutura)}
-            </pre>
-          </div>
-        </div>
-        
-        {/* Tab Código */}
-        <div 
-          className={`transform transition-all duration-500 ${
-            activeTab === 'codigo' ? 'opacity-100 translate-x-0' : 'opacity-0 absolute -translate-x-full'
-          }`}
-        >
-          <div className="bg-gray-50 dark:bg-gray-800/50 p-6 rounded-lg">
-            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-purple-600 dark:text-purple-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
-              </svg>
-              Exemplos de Código
-            </h3>
-            <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono leading-relaxed">
-              {formatarTexto(dados.codigo)}
-            </pre>
+            <div className="prose dark:prose-invert max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  pre: ({...props}) => <pre className="bg-gray-900 text-gray-100 p-4 rounded-lg overflow-x-auto text-sm font-mono leading-relaxed" {...props} />,
+                  code: ({...props}) => <code className="bg-gray-900 text-gray-100 px-1 rounded" {...props} />,
+                }}
+              >
+                {formatarTexto(dados.estrutura)}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
         
@@ -294,9 +245,19 @@ export default function ResultadoProjeto({ resultado, onNovoClick }: ResultadoPr
               </svg>
               Recursos Adicionais
             </h3>
-            <ul className="space-y-3">
-              {formatarRecursos(dados.recursos)}
-            </ul>
+            <div className="prose dark:prose-invert max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  h2: ({...props}) => <h2 className="text-xl font-bold mb-3 text-gray-900 dark:text-white" {...props} />,
+                  h3: ({...props}) => <h3 className="text-lg font-bold mb-2 text-gray-900 dark:text-white" {...props} />,
+                  ul: ({...props}) => <ul className="list-disc pl-6 mb-4" {...props} />,
+                  li: ({...props}) => <li className="mb-2 text-gray-700 dark:text-gray-300" {...props} />,
+                }}
+              >
+                {formatarTexto(dados.recursos?.join('\n'))}
+              </ReactMarkdown>
+            </div>
           </div>
         </div>
       </div>
