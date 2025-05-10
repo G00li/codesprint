@@ -309,21 +309,23 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
             # Extrair cada seção e logar
             resumo = extract_section(result_text, "Resumo do Projeto")
             estrutura = extract_section(result_text, "Estrutura do Projeto")
-            codigo = extract_section(result_text, "Exemplos de Código")
-            recursos = extract_resources(extract_section(result_text, "Próximos Passos"))
+            tecnologias = extract_section(result_text, "Tecnologias Recomendadas")
+            proximos_passos = extract_section(result_text, "Próximos Passos")
+            recursos = extract_resources(proximos_passos)
             
             logger.info(f"Seções extraídas:")
             logger.info(f"- Resumo: {resumo[:100]}...")
             logger.info(f"- Estrutura: {estrutura[:100]}...")
-            logger.info(f"- Código: {codigo[:100] if codigo else 'Não disponível'}...")
+            logger.info(f"- Tecnologias: {tecnologias[:100]}...")
+            logger.info(f"- Próximos Passos: {proximos_passos[:100]}...")
             logger.info(f"- Recursos: {len(recursos)} itens encontrados")
             
             processed_result = {
                 "resumo": resumo or result_text[:250],
-                "tecnologias": tech_stack,
+                "tecnologias": tecnologias or tech_stack,
                 "areas": area_selection,
                 "estrutura": estrutura or f"Estrutura padrão para {tech_stack}",
-                "codigo": codigo or "Código não disponível",
+                "codigo": "",  # Removido pois não é mais usado
                 "recursos": recursos
             }
                 
@@ -363,21 +365,25 @@ def extract_section(text, section_name):
         section_name_lower = section_name.lower()
         
         # Procura pelo título da seção
-        section_start = text_lower.find(section_name_lower)
+        section_start = text_lower.find(f"# {section_name_lower}")
         if section_start == -1:
-            return ""
-            
+            # Tenta encontrar sem o #
+            section_start = text_lower.find(section_name_lower)
+            if section_start == -1:
+                return ""
+        
         # Encontra o início do conteúdo (após o título)
         content_start = text.find('\n', section_start)
         if content_start == -1:
             return ""
-            
+        content_start += 1  # Pula a quebra de linha
+        
         # Encontra o próximo título de seção
         next_section = text.find('#', content_start)
         if next_section == -1:
             # Se não houver próxima seção, pega todo o conteúdo até o final
             return text[content_start:].strip()
-            
+        
         # Retorna o conteúdo entre o título atual e o próximo título
         return text[content_start:next_section].strip()
     except Exception as e:
@@ -385,10 +391,23 @@ def extract_section(text, section_name):
         return ""
 
 def extract_resources(resources_text):
-    """Converte recursos de texto para uma lista - simplificado"""
+    """Converte recursos de texto para uma lista - versão melhorada"""
     if not resources_text:
         return []
     
     # Dividir por linhas e remover espaços
     lines = [line.strip() for line in resources_text.split('\n') if line.strip()]
-    return lines
+    
+    # Filtrar linhas que começam com - ou *
+    resources = []
+    for line in lines:
+        if line.startswith('- ') or line.startswith('* '):
+            # Remove o marcador e espaços extras
+            resource = line[2:].strip()
+            if resource:
+                resources.append(resource)
+        elif line.startswith('## '):
+            # Adiciona o título da subseção como um recurso
+            resources.append(line[3:].strip())
+    
+    return resources
