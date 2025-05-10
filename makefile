@@ -59,3 +59,8 @@ env_crewai:
 
 env_desactivate:
 	deactivate
+
+test: ## Executar testes do backend
+	@echo "${BLUE}Executando testes do backend...${NC}"
+	cd backend && ./run_tests.sh
+	@echo "${GREEN}Testes concluídos!${NC}"
