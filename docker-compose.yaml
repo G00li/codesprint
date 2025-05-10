@@ -14,6 +14,7 @@ services:
       - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
+      - db
     restart: unless-stopped
 
   backend:
@@ -29,11 +30,13 @@ services:
     environment:
       LITELLM_MODEL_URL: http://ollama:11434
       CREWAI_BASE_URL: http://crewai:8004
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/codesprint
     volumes:
       - ./backend:/app
     depends_on:
       - crewai
       - redis
+      - db
     restart: unless-stopped
 
   crewai:
@@ -78,6 +81,25 @@ services:
     restart: unless-stopped
     entrypoint: ollama serve
 
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: codesprint
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - crewai-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
 networks:
   crewai-network:
     driver: bridge
@@ -85,3 +107,4 @@ networks:
 volumes:
   redis_data:
   ollama_data:
+  postgres_data:
