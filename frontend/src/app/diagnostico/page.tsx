@@ -43,6 +43,10 @@ export default function DiagnosticoPage() {
         setDiagnostico(diagnosticoData);
 
         // Processar status do banco de dados
+        if (!dbResponse.ok) {
+          throw new Error(`Erro ao verificar banco de dados: ${dbResponse.status}`);
+        }
+
         const dbData = await dbResponse.json();
         setDbStatus({
           name: 'Banco de Dados',
@@ -54,6 +58,12 @@ export default function DiagnosticoPage() {
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro desconhecido');
+        setDbStatus({
+          name: 'Banco de Dados',
+          status: 'error',
+          error: err instanceof Error ? err.message : 'Erro desconhecido',
+          summary: 'Falha na conexão com o banco de dados'
+        });
       } finally {
         setLoading(false);
       }
