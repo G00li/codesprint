@@ -1,15 +1,27 @@
-from fastapi import FastAPI 
+from fastapi import FastAPI, HTTPException
 from typing import List, Optional
 from pydantic import BaseModel
 import requests
 from app.services.crewai import CrewAiService
 from app.services.network_diagnostics import debug_service_connectivity
+import psycopg2
+from psycopg2 import OperationalError
+import os
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     app_name="CodeSpark",
     description="Uma plataforma de desenvolvimento de projetos guiada por IA"
-    )
+)
 
+# Configuração CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://frontend:3000", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 client = CrewAiService()
 
@@ -68,3 +80,18 @@ async def diagnose_network():
     """Endpoint para diagnóstico completo da rede entre os serviços"""
     results = debug_service_connectivity()
     return results
+
+@app.get("/api/health/db")
+async def check_db_health():
+    try:
+        conn = psycopg2.connect(
+            dbname=os.getenv("POSTGRES_DB", "codesprint"),
+            user=os.getenv("POSTGRES_USER", "postgres"),
+            password=os.getenv("POSTGRES_PASSWORD", "postgres"),
+            host=os.getenv("POSTGRES_HOST", "db"),
+            port=os.getenv("POSTGRES_PORT", "5432")
+        )
+        conn.close()
+        return {"status": "healthy", "message": "Database connection successful"}
+    except OperationalError as e:
+        raise HTTPException(status_code=503, detail=f"Database connection failed: {str(e)}")
