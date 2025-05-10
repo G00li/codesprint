@@ -72,16 +72,16 @@ def create_agents(selected_areas: list[str]):
 
 def execute_task_directly(agent, task_description, expected_output):
     """
-    Executa o agente com timeout reduzido e prompt simplificado
+    Executa o agente com timeout aumentado e prompt simplificado
     """
     try:
         logger.info(f"Executando agente diretamente: {agent.role}")
         
         # Prompt simplificado para reduzir o tempo de processamento
         full_prompt = f"""
-        {agent.role} deve responder de forma objetiva. Tarefa:
+        {agent.role} deve responder de forma objetiva e relevante. Tarefa:
         {task_description}
-        Resposta curta, sem explicações longas.
+        Resposta deve ser completa e específica para o projeto.
         """
 
         
@@ -93,23 +93,37 @@ def execute_task_directly(agent, task_description, expected_output):
         # Adicionar timeout para a chamada
         from concurrent.futures import ThreadPoolExecutor, TimeoutError
         with ThreadPoolExecutor() as executor:
-            # Iniciar chamada com timeout
+            # Iniciar chamada com timeout aumentado para 1000 segundos
             future = executor.submit(agent_llm.chat, [{"role": "user", "content": full_prompt}])
             
             try:
-                # Aguardar no máximo 60 segundos
-                result = future.result(timeout=90)
+                # Aguardar no máximo 1000 segundos
+                result = future.result(timeout=10000)
             except TimeoutError:
-                logger.warning(f"Timeout ao processar {agent.role}, usando resposta padrão")
-                # Resposta simples em caso de timeout
-                return {
-                    "agent": agent.role,
-                    "result": f"Análise técnica simplificada para projeto utilizando as tecnologias solicitadas.",
-                    "success": True
-                }
+                logger.warning(f"Timeout ao processar {agent.role}, tentando novamente com prompt mais curto")
+                # Tentar novamente com prompt mais curto
+                retry_prompt = f"""
+                {agent.role}, forneça uma resposta concisa para:
+                {task_description}
+                """
+                try:
+                    future = executor.submit(agent_llm.chat, [{"role": "user", "content": retry_prompt}])
+                    result = future.result(timeout=500)  # Timeout menor para a segunda tentativa
+                except TimeoutError:
+                    logger.error(f"Timeout na segunda tentativa para {agent.role}")
+                    return {
+                        "agent": agent.role,
+                        "result": f"Análise técnica simplificada para projeto utilizando as tecnologias solicitadas.",
+                        "success": False
+                    }
         
         execution_time = time.time() - start_time
         logger.info(f"Execução direta de {agent.role} concluída em {execution_time:.2f} segundos")
+        
+        # Verificar se a resposta é muito curta ou vazia
+        if not result or len(result) < 50:
+            logger.warning(f"Resposta muito curta de {agent.role}, tentando novamente")
+            return execute_task_directly(agent, task_description, expected_output)
         
         return {
             "agent": agent.role,
@@ -131,9 +145,11 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
     pm_result = None
     try:
         logger.info(f"Iniciando geração do projeto com áreas: {area_selection}, tecnologias: {tech_stack}")
+        logger.info(f"Descrição do projeto: {description[:100]}...")  # Log dos primeiros 100 caracteres
         
         # Validação básica dos inputs
         if not isinstance(description, str) or len(description) < 3:
+            logger.error("Descrição inválida ou muito curta")
             return {"error": "Descrição inválida ou muito curta"}
             
         # Preparar descrição simplificada
@@ -145,14 +161,14 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
         
         # Criar apenas dois agentes
         agents = create_agents(area_selection)
-        logger.info(f"Agentes criados: {len(agents)}")
+        logger.info(f"Agentes criados: {[agent.role for agent in agents]}")
         
         # Separar os agentes
         specialist = agents[0]
         project_manager = agents[1]
         
         # Definir timeout geral
-        overall_timeout = 90  # segundos para todo o processo
+        overall_timeout = 7000  # segundos para todo o processo
         start_time = time.time()
         
         # Executar especialista primeiro - com prompt simplificado
@@ -174,11 +190,13 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
         Seja conciso e específico.
         """
         
+        logger.info("Executando tarefa do especialista...")
         specialist_result = execute_task_directly(specialist, specialist_task, "Análise técnica concisa")
+        logger.info(f"Resultado do especialista: {specialist_result.get('result', '')[:200]}...")  # Log dos primeiros 200 caracteres
         
         # Verificar timeout geral
         if time.time() - start_time > overall_timeout:
-            # Se demorou demais, retornar resultado parcial
+            logger.warning("Timeout atingido durante execução do especialista")
             return {
                 "resumo": f"Análise básica com {tech_stack}",
                 "tecnologias": tech_stack,
@@ -187,6 +205,11 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
                 "codigo": "",
                 "recursos": []
             }
+        
+        # Verificar se o resultado do especialista é válido
+        if not specialist_result.get('success', False) or not specialist_result.get('result'):
+            logger.warning("Resultado do especialista inválido, tentando novamente")
+            specialist_result = execute_task_directly(specialist, specialist_task, "Análise técnica concisa")
         
         # Executar gerente com resultado do especialista - prompt simplificado
         pm_task = f"""
@@ -204,61 +227,104 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
         ---
 
         # Resumo do Projeto
-        [Um parágrafo conciso descrevendo o projeto. Exemplo: "Este projeto visa desenvolver uma aplicação full-stack para gestão de tarefas usando React no frontend e FastAPI no backend."]
+        [Forneça um resumo detalhado do projeto incluindo:
+        - Visão geral completa do projeto e seu propósito
+        - Principais funcionalidades e recursos
+        - Público-alvo e necessidades atendidas
+        - Benefícios e diferenciais do projeto
+        - Considerações técnicas importantes
+        Use parágrafos bem estruturados e seja específico.]
 
         # Estrutura do Projeto
-        - /frontend
-        - index.html
-        - app.js
-        - /backend
-        - main.py
-        - requirements.txt
+        [Forneça a estrutura detalhada de diretórios e arquivos, incluindo:
+        - Organização de pastas e arquivos
+        - Arquivos de configuração necessários
+        - Arquivos de dependências
+        - Arquivos de ambiente
+        - Estrutura de testes]
 
         # Tecnologias Recomendadas
-        - React
-        - FastAPI
-        - PostgreSQL
+        [Liste todas as tecnologias necessárias, incluindo:
+        - Frameworks principais
+        - Bibliotecas essenciais
+        - Ferramentas de desenvolvimento
+        - Banco de dados
+        - Serviços externos]
 
         # Próximos Passos
-        - Criar repositório no GitHub
-        - Configurar estrutura inicial
-        - Definir endpoints principais da API
+        [Forneça um guia detalhado de implementação, incluindo:
 
-        ---
+        ## Configuração e Setup
+        - Passos para configurar o ambiente de desenvolvimento
+        - Instalação de dependências
+        - Configuração de variáveis de ambiente
+        - Setup inicial do projeto
 
-        **IMPORTANTE:**
-        - Mantenha a ordem e os títulos exatamente como estão.
-        - Use `N/A` se não souber a resposta para uma seção.
-        - Não insira explicações extras fora das seções.
+        ## Desenvolvimento
+        - Ordem recomendada de implementação das funcionalidades
+        - Pontos de atenção durante o desenvolvimento
+        - Estratégias de teste
+        - Documentação necessária
+
+        ## Dicas e Boas Práticas
+        - Padrões de código recomendados
+        - Estratégias de otimização
+        - Armadilhas comuns a evitar
+        - Dicas de performance
+
+        ## Recursos de Aprendizado
+        - Documentação oficial relevante
+        - Tutoriais recomendados
+        - Ferramentas úteis
+        - Comunidades de suporte
+
+        ## Conselhos para Produção
+        - Estratégias de deploy
+        - Monitoramento e logging
+        - Manutenção e atualizações
+        - Escalabilidade e performance
+        - Segurança e backup
+        - CI/CD e automação]
+
+        Seja específico e forneça exemplos práticos quando possível.
         """
-        if time.time() - start_time > overall_timeout:
-        # Se demorou demais, retornar resultado parcial
-            return {
-                "resumo": f"Análise básica com {tech_stack}",
-                "tecnologias": tech_stack,
-                "areas": area_selection,
-                "estrutura": f"Estrutura padrão para projeto com {tech_stack}",
-                "codigo": "",
-                "recursos": []
-            }
-
+        
+        logger.info("Executando tarefa do gerente de projeto...")
         pm_result = execute_task_directly(project_manager, pm_task, "Plano de projeto estruturado")
+        logger.info(f"Resultado do gerente: {pm_result.get('result', '')[:200]}...")  # Log dos primeiros 200 caracteres
+
+        # Verificar se o resultado do gerente é válido
+        if not pm_result.get('success', False) or not pm_result.get('result'):
+            logger.warning("Resultado do gerente inválido, tentando novamente")
+            pm_result = execute_task_directly(project_manager, pm_task, "Plano de projeto estruturado")
 
         # Verificar resultado e formatar resposta (simplificada)
         result_text = (
             pm_result.get('result') if pm_result and pm_result.get('result')
             else specialist_result.get('result', 'Não foi possível gerar resultado completo')
         )
-
         
+        logger.info("Processando resultado final...")
         try:
+            # Extrair cada seção e logar
+            resumo = extract_section(result_text, "Resumo do Projeto")
+            estrutura = extract_section(result_text, "Estrutura do Projeto")
+            codigo = extract_section(result_text, "Exemplos de Código")
+            recursos = extract_resources(extract_section(result_text, "Próximos Passos"))
+            
+            logger.info(f"Seções extraídas:")
+            logger.info(f"- Resumo: {resumo[:100]}...")
+            logger.info(f"- Estrutura: {estrutura[:100]}...")
+            logger.info(f"- Código: {codigo[:100] if codigo else 'Não disponível'}...")
+            logger.info(f"- Recursos: {len(recursos)} itens encontrados")
+            
             processed_result = {
-                "resumo": extract_section(result_text, "Resumo do Projeto") or result_text[:250],
+                "resumo": resumo or result_text[:250],
                 "tecnologias": tech_stack,
                 "areas": area_selection,
-                "estrutura": extract_section(result_text, "Estrutura do Projeto") or f"Estrutura padrão para {tech_stack}",
-                "codigo": "",  # Se quiser gerar código, adicione seção no prompt e extraia aqui
-                "recursos": extract_resources(extract_section(result_text, "Próximos Passos"))
+                "estrutura": estrutura or f"Estrutura padrão para {tech_stack}",
+                "codigo": codigo or "Código não disponível",
+                "recursos": recursos
             }
                 
             logger.info("Resultado processado com sucesso")
@@ -287,30 +353,35 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
         }
 
 def extract_section(text, section_name):
-    """Extrai uma seção específica do resultado - versão simplificada"""
+    """Extrai uma seção específica do resultado - versão melhorada"""
     try:
-        if not text or not section_name in text.lower():
+        if not text or not section_name:
             return ""
             
-        lines = text.split('\n')
-        section_content = []
-        found_section = False
+        # Normaliza o texto e o nome da seção para comparação
+        text_lower = text.lower()
+        section_name_lower = section_name.lower()
         
-        for line in lines:
-            # Detectar início da seção
-            if not found_section and section_name.lower() in line.lower():
-                found_section = True
-                continue
+        # Procura pelo título da seção
+        section_start = text_lower.find(section_name_lower)
+        if section_start == -1:
+            return ""
             
-            # Se encontrou seção, adicionar conteúdo
-            if found_section:
-                # Parar quando encontrar outra seção
-                if line.strip().startswith('#') or line.strip().startswith('##'):
-                    break
-                section_content.append(line)
-        
-        return '\n'.join(section_content).strip()
-    except:
+        # Encontra o início do conteúdo (após o título)
+        content_start = text.find('\n', section_start)
+        if content_start == -1:
+            return ""
+            
+        # Encontra o próximo título de seção
+        next_section = text.find('#', content_start)
+        if next_section == -1:
+            # Se não houver próxima seção, pega todo o conteúdo até o final
+            return text[content_start:].strip()
+            
+        # Retorna o conteúdo entre o título atual e o próximo título
+        return text[content_start:next_section].strip()
+    except Exception as e:
+        logger.error(f"Erro ao extrair seção {section_name}: {str(e)}")
         return ""
 
 def extract_resources(resources_text):

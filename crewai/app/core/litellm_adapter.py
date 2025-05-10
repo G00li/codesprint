@@ -73,7 +73,7 @@ class CustomLiteLLM:
                 messages=messages,
                 temperature=0.3,
                 max_tokens=500,  # Limitar o tamanho da resposta
-                timeout=90  # Timeout específico para a chamada
+                timeout=10000  # Timeout específico para a chamada
             )
             
             # Extrair a resposta do modelo
