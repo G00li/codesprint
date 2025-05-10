@@ -1,236 +1,181 @@
-# CodeSprint - Plataforma de Desenvolvimento de Projetos
+# 🚀 CodeSprint
 
-## 🔍 Sobre o Projeto
+[![ETIC](https://img.shields.io/badge/ETIC-Backend2-blue)](https://github.com/seu-usuario/codesprint)
+[![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow)](https://github.com/seu-usuario/codesprint)
 
-O **CodeSprint** é uma plataforma inovadora que utiliza Inteligência Artificial para acelerar o desenvolvimento de novos projetos. Com uma interface intuitiva e responsiva, desenvolvedores podem especificar suas necessidades e obter um projeto base completo em questão de minutos.
+## 📋 Sumário
+- [Sobre o Projeto](#-sobre-o-projeto)
+- [Tecnologias e Ferramentas](#-tecnologias-e-ferramentas)
+- [Instalação](#-instalação)
+- [Funcionalidades](#-funcionalidades)
+- [Arquitetura do Sistema](#-arquitetura-do-sistema)
+- [Diagnóstico e Troubleshooting](#-diagnóstico-e-troubleshooting)
+- [Monitoramento](#-monitoramento)
+- [Contribuição](#-contribuição)
+- [Licença](#-licença)
 
-## 🛠️ Arquitetura do Sistema
+## 🎯 Sobre o Projeto
 
-O CodeSprint é composto por vários serviços interconectados:
+Bem-vindo ao **CodeSprint**! 🎉
 
-- **Frontend**: Interface de usuário React/Next.js (porta 3000)
-- **Backend**: API REST em Python/FastAPI (porta 8000)
-- **CrewAI**: Serviço de orquestração de IA (porta 8004)
-- **Ollama**: Serviço de execução de modelos de linguagem (porta 11434)
-- **Redis**: Cache e filas de tarefas (porta 6379)
+O CodeSprint é uma plataforma que utiliza Inteligência Artificial para auxiliar no desenvolvimento de novos projetos. Com uma interface intuitiva e responsiva, desenvolvedores podem especificar suas necessidades e obter um projeto base completo em questão de minutos.
 
-Os serviços se comunicam entre si através de uma rede Docker dedicada.
+### 🌟 Destaques
+- Desenvolvimento assistido por IA
+- Interface web responsiva
+- Geração de código base
+- Ambiente Docker completo
+- Ferramentas de diagnóstico integradas
 
-## 📋 Requisitos
+## 🛠️ Tecnologias e Ferramentas
 
+### Frontend
+- **React/Next.js** - Framework para interface do usuário
+- **TypeScript** - Tipagem estática
+- **TailwindCSS** - Estilização moderna
+
+### Backend
+- **Python/FastAPI** - API REST de alta performance
+- **SQLAlchemy** - ORM para banco de dados
+- **Pydantic** - Validação de dados
+
+### IA e Processamento
+- **CrewAI** - Orquestração de agentes de IA
+- **Ollama** - Execução de modelos de linguagem
+
+### Infraestrutura
+- **Docker** - Containerização
+- **Redis** - Cache e filas
+- **PostgreSQL** - Banco de dados principal
+
+## 💻 Instalação
+
+### Pré-requisitos
 - Docker e Docker Compose
-- 8GB+ de RAM disponível
+- 8GB+ de RAM
 - 20GB+ de espaço em disco
-- Conexão estável com a internet (para download inicial dos modelos)
+- Conexão estável com internet
 
-## 🚀 Instalação e Execução
+### Passo a Passo
 
-### Instalação Rápida
-
+1. **Clone o Repositório**
 ```bash
-# Clone o repositório
 git clone https://github.com/seu-usuario/codesprint.git
 cd codesprint
-
-# Inicie os serviços (com download automático do modelo LLM)
-./start_services.sh
 ```
 
-### Usando Makefile
+2. **Inicie os Serviços**
+```bash
+# Método 1: Script de inicialização
+./start_services.sh
+
+# Método 2: Usando Makefile
+make up
+```
+
+3. **Verifique a Instalação**
+```bash
+./check_services.sh
+```
+
+4. **Acesse a Aplicação**
+- Frontend: http://localhost:3000
+- Backend API: http://localhost:8000
+- Documentação API: http://localhost:8000/docs
+
+### Comandos Makefile Disponíveis
+
+O projeto inclui um Makefile com vários comandos úteis para gerenciar o ambiente:
 
 ```bash
-# Inicia todos os contêineres
+# Iniciar todos os serviços
 make up
 
-# Para todos os contêineres
+# Parar todos os serviços
 make down
 
-# Reinicia todos os contêineres
+# Reiniciar todos os serviços
 make restart
 
-# Limpa ambiente (remove contêineres e volumes)
+# Limpar ambiente (remove contêineres e volumes)
 make clean
+
+# Verificar status dos serviços
+make status
+
+# Ver logs de todos os serviços
+make logs
+
+# Ver logs de um serviço específico
+make logs SERVICE=backend
+
+# Executar testes
+make test
+
+# Construir imagens Docker
+make build
 ```
 
-### Verificação da Instalação
+## ✨ Funcionalidades
 
+### 1. Desenvolvimento Assistido por IA
+- Geração de código base para novos projetos
+- Sugestões de implementação via IA
+- Documentação automática do código gerado
+
+### 2. Interface Web
+- Dashboard intuitivo
+- Formulários para especificação de projetos
+- Visualização do progresso de geração
+- Ferramentas de diagnóstico integradas
+
+### 3. Diagnóstico e Monitoramento
+- Interface de diagnóstico web
+- Scripts de verificação de serviços
+- Endpoints de health check
+- Logs detalhados por serviço
+
+## 🏗️ Arquitetura do Sistema
+
+O CodeSprint utiliza uma arquitetura distribuída com os seguintes serviços:
+
+- **Frontend** (porta 3000)
+- **Backend** (porta 8000)
+- **CrewAI** (porta 8004)
+- **Ollama** (porta 11434)
+- **Redis** (porta 6379)
+
+## 🔍 Diagnóstico e Troubleshooting
+
+### Ferramentas de Diagnóstico
+- Interface web de diagnóstico (http://localhost:3000/diagnostico)
+- Scripts de verificação automática
+- Endpoints de health check
+- Logs detalhados por serviço
+
+### Comandos Úteis
 ```bash
-# Verifica o status dos serviços
-./check_services.sh
-```
-
-## 🔧 Ferramentas de Diagnóstico
-
-O CodeSprint inclui diversas ferramentas para diagnóstico de problemas de conectividade entre os serviços.
-
-### 1. Diagnóstico via Interface Web
-
-Acesse as ferramentas de diagnóstico pela interface web:
-
-- **Diagnóstico Automático**: http://localhost:3000/diagnostico
-- **Diagnóstico Manual**: http://localhost:3000/diagnostico/manual
-
-A ferramenta de diagnóstico manual permite testar a conectividade com qualquer endpoint, facilitando a identificação de problemas específicos.
-
-### 2. Script de Diagnóstico
-
-Execute o script de diagnóstico para verificar todos os serviços:
-
-```bash
-./check_services.sh
-```
-
-Este script verifica:
-- Status dos contêineres Docker
-- Conectividade com cada serviço
-- Logs de serviços com problemas
-- Diagnóstico de rede interno
-
-### 3. Endpoints de Diagnóstico no Backend
-
-O backend expõe endpoints específicos para diagnóstico:
-
-- **Health Check**: http://localhost:8000/health
-- **Diagnóstico CrewAI**: http://localhost:8000/diagnose-crewai
-- **Diagnóstico de Rede**: http://localhost:8000/diagnose-network
-
-### 4. Script de Correção de Conectividade
-
-Para corrigir problemas comuns de conectividade:
-
-```bash
-./fix_connection.sh
-```
-
-Este script detecta e corrige automaticamente problemas de configuração entre os serviços.
-
-### 5. Comandos Docker Úteis
-
-Verifique o status e os logs dos serviços:
-
-```bash
-# Verificar status dos contêineres
+# Verificar status dos serviços
 docker-compose ps
 
-# Ver logs do serviço backend
-docker-compose logs backend
+# Ver logs específicos
+docker-compose logs [serviço]
 
-# Ver logs do serviço crewai
-docker-compose logs crewai
-
-# Ver logs do serviço ollama
-docker-compose logs ollama
-
-# Executar diagnóstico de rede interno
+# Diagnóstico de rede
 docker-compose exec backend python -m app.services.network_diagnostics
 ```
 
-## 🔄 Conectividade entre Contêineres
+## 📊 Monitoramento
 
-Ao usar o sistema em contêineres Docker, lembre-se que:
-
-1. **Nomes de serviços vs Localhost**: 
-   - Use `backend`, `crewai` e `ollama` como nomes de hosts dentro da rede Docker
-   - Use `localhost` apenas quando acessar os serviços de fora dos contêineres
-
-2. **Exemplo de URLs**:
-   - Dentro dos contêineres: `http://backend:8000/health`
-   - Acesso externo: `http://localhost:8000/health`
-
-3. **Variáveis de ambiente**:
-   - A variável `NEXT_PUBLIC_BACKEND_URL` define a URL do backend
-   - O valor padrão nos contêineres é `http://backend:8000`
-   - Ao rodar localmente, defina como `http://localhost:8000`
-
-4. **Testando conectividade**:
-   - Use a ferramenta de diagnóstico manual em http://localhost:3000/diagnostico/manual
-   - Ao testar dentro dos contêineres, use os nomes dos serviços (`backend`, `crewai`, etc.)
-
-## 🚨 Resolução de Problemas Comuns
-
-### Erro de Conexão Recusada (Connection Refused)
-
-Isso geralmente indica que o serviço não está rodando ou não está acessível na porta configurada.
-
-**Solução**: Verifique se o contêiner está em execução com `docker-compose ps` e analise os logs com `docker-compose logs [serviço]`.
-
-### Erro 500 do CrewAI
-
-Se o backend consegue se comunicar com o CrewAI, mas recebe um erro 500, geralmente é um problema com o modelo do Ollama.
-
-**Solução**: Verifique se o Ollama está rodando e se o modelo especificado está disponível:
-
+### Recursos do Sistema
 ```bash
-# Verificar status do Ollama
-docker-compose logs ollama
-
-# Verificar a comunicação Ollama-CrewAI
-docker-compose exec backend python -m app.test_crewai_connection
-```
-
-### Timeout em Requisições
-
-Timeouts podem ocorrer quando o Ollama está carregando o modelo pela primeira vez, o que pode levar alguns minutos.
-
-**Solução**: Aguarde alguns minutos após iniciar os serviços e tente novamente. Verifique os logs do Ollama para acompanhar o progresso.
-
-### Erro "Failed to fetch" no Frontend
-
-Esse erro geralmente ocorre quando o frontend tenta acessar o backend usando `localhost` em vez do nome do serviço Docker.
-
-**Solução**: 
-1. Verifique se a configuração da URL do backend está correta no frontend
-2. Use o diagnóstico manual para testar com a URL correta (`http://backend:8000/...`)
-3. Reinicie o contêiner frontend após modificar variáveis de ambiente: `docker-compose restart frontend`
-
-## 📊 Monitoramento e Desempenho
-
-### Verificação de Recursos
-
-Para monitorar o uso de recursos pelos contêineres:
-
-```bash
+# Monitoramento em tempo real
 docker stats
-```
 
-### Verificação de Modelos Ollama
-
-Para verificar os modelos disponíveis no Ollama:
-
-```bash
+# Verificar modelos disponíveis
 docker exec -it codesprint-ollama-1 ollama list
 ```
 
-### Download Manual de Modelos
-
-Para baixar manualmente o modelo LLM usado pelo sistema:
-
-```bash
-docker exec -it codesprint-ollama-1 ollama pull llama3:8b
-```
-
-## 📚 Documentação Adicional
-
-Consulte estes arquivos para informações específicas:
-
-- `CHANGELOG.md`: Histórico de alterações e melhorias no sistema
-- `backend/README_TROUBLESHOOTING.md`: Guia detalhado de solução de problemas
-
-## 🧪 Desenvolvimento e Contribuição
-
-Para contribuir com o projeto:
-
-1. Escolha uma issue aberta ou crie uma nova
-2. Faça fork do repositório
-3. Crie um branch para sua feature (`git checkout -b feature/nome-da-feature`)
-4. Implemente suas alterações
-5. Execute os testes necessários
-6. Faça commit das alterações (`git commit -am 'Adiciona nova feature'`)
-7. Faça push para o branch (`git push origin feature/nome-da-feature`)
-8. Abra um Pull Request
-
 ## 📄 Licença
 
-Desenvolvido com ❤️ pelo time CodeSprint
-
-[Incluir informações de licença se aplicável]
+Desenvolvido com ❤️ pelo time CodeSprint, ou seja, Leandro Oliveira
