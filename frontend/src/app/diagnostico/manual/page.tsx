@@ -216,6 +216,7 @@ export default function ManualDiagnostico() {
             <li>Diagnóstico de rede: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">http://backend:8000/diagnose-network</code></li>
             <li>CrewAI: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">http://crewai:8004/health</code></li>
             <li>Ollama: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">http://ollama:11434/api/version</code></li>
+            <li>DB: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">http://backend:8000/api/health/db</code></li>
           </ul>
           <p className="text-xs text-gray-500 mt-2">
             Nota: Use os nomes dos serviços Docker (backend, crewai, ollama) em vez de localhost 

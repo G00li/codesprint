@@ -12,6 +12,12 @@ interface TestData {
   summary?: string;
 }
 
+interface BackendTestResult {
+  name: string;
+  status: 'passed' | 'failed';
+  output?: string;
+}
+
 interface DiagnosticoData {
   config: {
     backendUrl: string;
@@ -23,6 +29,7 @@ interface DiagnosticoData {
 export default function DiagnosticoPage() {
   const [diagnostico, setDiagnostico] = useState<DiagnosticoData | null>(null);
   const [dbStatus, setDbStatus] = useState<TestData | null>(null);
+  const [backendTests, setBackendTests] = useState<BackendTestResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,9 +37,10 @@ export default function DiagnosticoPage() {
     const runDiagnostico = async () => {
       try {
         setLoading(true);
-        const [diagnosticoResponse, dbResponse] = await Promise.all([
+        const [diagnosticoResponse, dbResponse, testResponse] = await Promise.all([
           fetch('/api/diagnostico'),
-          fetch('/api/health/db')
+          fetch('/api/health/db'),
+          fetch('/api/test-results')
         ]);
 
         if (!diagnosticoResponse.ok) {
@@ -55,6 +63,14 @@ export default function DiagnosticoPage() {
           data: dbData,
           summary: dbResponse.ok ? 'Conexão com o banco de dados estabelecida com sucesso' : 'Falha na conexão com o banco de dados'
         });
+
+        // Processar resultados dos testes do backend
+        if (testResponse.ok) {
+          const testData = await testResponse.json();
+          if (testData.success) {
+            setBackendTests(testData.tests);
+          }
+        }
 
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro desconhecido');
@@ -204,6 +220,32 @@ export default function DiagnosticoPage() {
                         </div>
                       )}
                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-lg font-semibold mb-2">Testes do Backend</h3>
+              <div className="space-y-4">
+                {backendTests.map((test, index) => (
+                  <div key={index} className="border rounded-lg overflow-hidden">
+                    <div className={`p-3 flex justify-between items-center ${
+                      test.status === 'passed' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' :
+                      'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300'
+                    }`}>
+                      <span className="font-medium">{test.name}</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase">
+                        {test.status}
+                      </span>
+                    </div>
+                    {test.output && (
+                      <div className="p-3 bg-white dark:bg-gray-800 border-t">
+                        <pre className="text-xs overflow-x-auto whitespace-pre-wrap">
+                          {test.output}
+                        </pre>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
