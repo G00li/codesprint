@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from typing import List, Optional, Dict
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 import requests
 from app.services.crewai import CrewAiService
 from app.services.network_diagnostics import debug_service_connectivity
@@ -9,6 +9,8 @@ from psycopg2 import OperationalError
 import os
 import time
 from fastapi.middleware.cors import CORSMiddleware
+import subprocess
+import json
 
 app = FastAPI(
     app_name="CodeSpark",
@@ -31,6 +33,24 @@ class ProjetoRequest(BaseModel):
     tecnologias: str
     descricao: str
     usar_exa: Optional[bool] = False
+
+    @validator('areas')
+    def validate_areas(cls, v):
+        if not v:
+            raise ValueError('A lista de áreas não pode estar vazia')
+        return v
+
+    @validator('tecnologias')
+    def validate_tecnologias(cls, v):
+        if not v.strip():
+            raise ValueError('As tecnologias não podem estar vazias')
+        return v
+
+    @validator('descricao')
+    def validate_descricao(cls, v):
+        if not v.strip():
+            raise ValueError('A descrição não pode estar vazia')
+        return v
 
 class TestResult(BaseModel):
     url: str
@@ -192,3 +212,38 @@ async def teste_rapido():
         "testTime": f"{total_time:.2f}s",
         "results": results
     }
+
+@app.get("/api/test-results")
+async def get_test_results():
+    """Endpoint para executar os testes e retornar os resultados"""
+    try:
+        # Executa os testes e captura a saída
+        result = subprocess.run(
+            ["pytest", "--json-report", "--json-report-file=none"],
+            capture_output=True,
+            text=True
+        )
+        
+        # Processa a saída do pytest
+        test_results = []
+        for line in result.stdout.split('\n'):
+            if line.startswith('test_'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    test_name = parts[0]
+                    status = 'passed' if 'PASSED' in line else 'failed'
+                    test_results.append({
+                        "name": test_name,
+                        "status": status
+                    })
+        
+        return {
+            "success": result.returncode == 0,
+            "tests": test_results,
+            "output": result.stdout
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }
