@@ -1,15 +1,30 @@
-from fastapi import FastAPI 
-from typing import List, Optional
-from pydantic import BaseModel
+from fastapi import FastAPI, HTTPException
+from typing import List, Optional, Dict
+from pydantic import BaseModel, validator
 import requests
 from app.services.crewai import CrewAiService
 from app.services.network_diagnostics import debug_service_connectivity
+import psycopg2
+from psycopg2 import OperationalError
+import os
+import time
+from fastapi.middleware.cors import CORSMiddleware
+import subprocess
+import json
 
 app = FastAPI(
     app_name="CodeSpark",
     description="Uma plataforma de desenvolvimento de projetos guiada por IA"
-    )
+)
 
+# Configuração CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://frontend:3000", "http://localhost:3000"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 client = CrewAiService()
 
@@ -18,6 +33,33 @@ class ProjetoRequest(BaseModel):
     tecnologias: str
     descricao: str
     usar_exa: Optional[bool] = False
+
+    @validator('areas')
+    def validate_areas(cls, v):
+        if not v:
+            raise ValueError('A lista de áreas não pode estar vazia')
+        return v
+
+    @validator('tecnologias')
+    def validate_tecnologias(cls, v):
+        if not v.strip():
+            raise ValueError('As tecnologias não podem estar vazias')
+        return v
+
+    @validator('descricao')
+    def validate_descricao(cls, v):
+        if not v.strip():
+            raise ValueError('A descrição não pode estar vazia')
+        return v
+
+class TestResult(BaseModel):
+    url: str
+    success: bool
+    status: Optional[int] = None
+    statusText: Optional[str] = None
+    responseTime: Optional[str] = None
+    data: Optional[Dict] = None
+    error: Optional[str] = None
 
 @app.get("/health")
 async def health_check():
@@ -68,3 +110,140 @@ async def diagnose_network():
     """Endpoint para diagnóstico completo da rede entre os serviços"""
     results = debug_service_connectivity()
     return results
+
+@app.get("/api/health/db")
+async def check_db_health():
+    try:
+        conn = psycopg2.connect(
+            dbname=os.getenv("POSTGRES_DB", "codesprint"),
+            user=os.getenv("POSTGRES_USER", "postgres"),
+            password=os.getenv("POSTGRES_PASSWORD", "postgres"),
+            host=os.getenv("POSTGRES_HOST", "db"),
+            port=os.getenv("POSTGRES_PORT", "5432")
+        )
+        conn.close()
+        return {"status": "healthy", "message": "Database connection successful"}
+    except OperationalError as e:
+        raise HTTPException(status_code=503, detail=f"Database connection failed: {str(e)}")
+
+@app.get("/health/db")
+async def check_db_health_alt():
+    """Endpoint alternativo para verificação de saúde do banco de dados"""
+    return await check_db_health()
+
+@app.get("/api/teste-rapido")
+async def teste_rapido():
+    """Endpoint para teste rápido de conectividade com todos os serviços"""
+    results = []
+    start_time = time.time()
+    
+    # Teste do banco de dados
+    db_start = time.time()
+    try:
+        conn = psycopg2.connect(
+            dbname=os.getenv("POSTGRES_DB", "codesprint"),
+            user=os.getenv("POSTGRES_USER", "postgres"),
+            password=os.getenv("POSTGRES_PASSWORD", "postgres"),
+            host=os.getenv("POSTGRES_HOST", "db"),
+            port=os.getenv("POSTGRES_PORT", "5432")
+        )
+        conn.close()
+        db_time = time.time() - db_start
+        results.append(TestResult(
+            url="postgresql://db:5432/codesprint",
+            success=True,
+            status=200,
+            statusText="OK",
+            responseTime=f"{db_time:.2f}s",
+            data={"message": "Database connection successful"}
+        ))
+    except Exception as e:
+        results.append(TestResult(
+            url="postgresql://db:5432/codesprint",
+            success=False,
+            error=str(e)
+        ))
+
+    # Teste do CrewAI
+    crewai_url = os.getenv("CREWAI_BASE_URL", "http://crewai:8004")
+    crewai_start = time.time()
+    try:
+        response = requests.get(f"{crewai_url}/health", timeout=5)
+        crewai_time = time.time() - crewai_start
+        results.append(TestResult(
+            url=f"{crewai_url}/health",
+            success=response.ok,
+            status=response.status_code,
+            statusText=response.reason,
+            responseTime=f"{crewai_time:.2f}s",
+            data=response.json() if response.ok else None
+        ))
+    except Exception as e:
+        results.append(TestResult(
+            url=f"{crewai_url}/health",
+            success=False,
+            error=str(e)
+        ))
+
+    # Teste do backend
+    backend_start = time.time()
+    try:
+        response = requests.get("http://localhost:8000/health", timeout=5)
+        backend_time = time.time() - backend_start
+        results.append(TestResult(
+            url="http://localhost:8000/health",
+            success=response.ok,
+            status=response.status_code,
+            statusText=response.reason,
+            responseTime=f"{backend_time:.2f}s",
+            data=response.json() if response.ok else None
+        ))
+    except Exception as e:
+        results.append(TestResult(
+            url="http://localhost:8000/health",
+            success=False,
+            error=str(e)
+        ))
+
+    total_time = time.time() - start_time
+    
+    return {
+        "backendUrl": os.getenv("BACKEND_URL", "http://backend:8000"),
+        "testTime": f"{total_time:.2f}s",
+        "results": results
+    }
+
+@app.get("/api/test-results")
+async def get_test_results():
+    """Endpoint para executar os testes e retornar os resultados"""
+    try:
+        # Executa os testes e captura a saída
+        result = subprocess.run(
+            ["pytest", "--json-report", "--json-report-file=none"],
+            capture_output=True,
+            text=True
+        )
+        
+        # Processa a saída do pytest
+        test_results = []
+        for line in result.stdout.split('\n'):
+            if line.startswith('test_'):
+                parts = line.split()
+                if len(parts) >= 2:
+                    test_name = parts[0]
+                    status = 'passed' if 'PASSED' in line else 'failed'
+                    test_results.append({
+                        "name": test_name,
+                        "status": status
+                    })
+        
+        return {
+            "success": result.returncode == 0,
+            "tests": test_results,
+            "output": result.stdout
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "error": str(e)
+        }

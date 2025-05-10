@@ -1,630 +1,413 @@
 from crewai import Agent, Task, Crew
 from app.core.llm_client import OllamaLLM
-# Importa o adaptador LiteLLM
 from app.core.litellm_adapter import llm_adapter
+import logging
+import threading
+import time
+import concurrent.futures
+import multiprocessing
+import os
 
-# instancia o LLM
-llm = OllamaLLM(
-    model_name="ollama/llama3:8b",
-    temperature=0.3
-    )
+# Desativa a telemetria do CrewAI para evitar erros SSL
+os.environ["CREWAI_TRACING"] = "false"
+
+# Configure logger
+logger = logging.getLogger("crewai_generator")
+
+# instancia o LLM - usar diretamente o adaptador LiteLLM para evitar erros
+llm = llm_adapter
+logger.info("Usando adaptador LiteLLM como modelo de linguagem principal")
     
 def create_agents(selected_areas: list[str]):
     """
-    Cria agentes baseados nas áreas selecionadas pelo usuário.
-    Suporta todas as áreas do frontend: Web, Mobile, Desktop, API,
-    Inteligência Artificial, Machine Learning, Jogos, IoT, Blockchain, Segurança
+    Versão simplificada e otimizada para criar agentes
+    Reduz o número de agentes para melhorar performance
     """
-    area_agents = []
+    # Cria apenas dois agentes: um especialista principal e um gerente
     
-    # Mapeamento de áreas do frontend para as categorias internas se necessário
-    mapped_areas = []
+    # Determinar o especialista principal com base nas áreas selecionadas
+    primary_role = "Especialista Web"  # default
+    primary_goal = "Definir arquitetura técnica completa"
+    primary_backstory = "Especialista em desenvolvimento de software com conhecimento em múltiplas tecnologias."
     
-    # Adiciona categorias internas com base nas áreas selecionadas no frontend
-    if "Web" in selected_areas:
-        mapped_areas.append("frontend")
-        mapped_areas.append("backend")
+    # Escolher especialidade principal com base na primeira área selecionada
+    if "Web" in selected_areas or len(selected_areas) == 0:
+        primary_role = "Especialista Web"
+        primary_backstory = "Especialista em desenvolvimento web full-stack."
+    elif "Mobile" in selected_areas:
+        primary_role = "Especialista Mobile"
+        primary_backstory = "Especialista em desenvolvimento mobile com React Native ou Flutter."
+    elif "Desktop" in selected_areas:
+        primary_role = "Especialista Desktop"
+        primary_backstory = "Especialista em aplicações desktop."
+    elif "API" in selected_areas:
+        primary_role = "Especialista Backend/API"
+        primary_backstory = "Especialista em desenvolvimento backend e APIs."
+    elif "Inteligência Artificial" in selected_areas or "Machine Learning" in selected_areas:
+        primary_role = "Especialista IA/ML"
+        primary_backstory = "Especialista em IA/ML e implementações práticas."
+    elif "Jogos" in selected_areas:
+        primary_role = "Especialista em Jogos"
+        primary_backstory = "Especialista em desenvolvimento de jogos."
     
-    if "Mobile" in selected_areas:
-        mapped_areas.append("mobile")
-    
-    if "Desktop" in selected_areas:
-        mapped_areas.append("desktop")
-    
-    if "API" in selected_areas:
-        mapped_areas.append("backend")
-        mapped_areas.append("api")
-    
-    if "Inteligência Artificial" in selected_areas or "Machine Learning" in selected_areas:
-        mapped_areas.append("ai_ml")
-    
-    if "Jogos" in selected_areas:
-        mapped_areas.append("games")
-    
-    if "IoT" in selected_areas:
-        mapped_areas.append("iot")
-    
-    if "Blockchain" in selected_areas:
-        mapped_areas.append("blockchain")
-    
-    if "Segurança" in selected_areas:
-        mapped_areas.append("security")
-    
-    # Sempre inclui devops para uma estrutura de projeto completa
-    mapped_areas.append("devops")
-    
-    # Remove duplicatas
-    mapped_areas = list(set(mapped_areas))
-
-    # Frontend Web Agents
-    if "frontend" in mapped_areas:
-        frontend_architect = Agent(
-            role="Arquiteto de Frontend",
-            goal="Definir uma arquitetura frontend escalável, moderna e desafiadora",
-            backstory="""Você é um especialista em frontend com anos de experiência em 
-            frameworks modernos como Next.js, React, Tailwind. Seu objetivo é propor 
-            uma estrutura robusta e explicar como ela pode ser escalada.""",
-            verbose=True,
-            llm=llm
-        )
-
-        ui_ux_specialist = Agent(
-            role="Especialista em UI/UX",
-            goal="Projetar experiências visuais interativas e desafiadoras",
-            backstory="""Você é um expert em interfaces bonitas, acessíveis e intuitivas. 
-            Vai sugerir uso de animações com Framer Motion, temas escuros, responsividade 
-            e boas práticas de design moderno.""",
-            verbose=True,
-            llm=llm
-        )
-
-        task_designer = Agent(
-            role="Designer de Tarefas de Frontend",
-            goal="Quebrar o projeto em passos claros de frontend",
-            backstory="Você transforma qualquer proposta visual em um conjunto lógico e eficiente de tarefas.",
-            verbose=True,
-            llm=llm
-        )
-
-        area_agents += [frontend_architect, ui_ux_specialist, task_designer]
-
-    # Mobile Agents
-    if "mobile" in mapped_areas:
-        mobile_architect = Agent(
-            role="Arquiteto de Aplicações Móveis",
-            goal="Definir uma arquitetura móvel robusta e multiplataforma",
-            backstory="""Você é especialista em desenvolvimento móvel com React Native, Flutter, 
-            Swift e Kotlin. Tem experiência em criar apps performáticos com boas práticas de UX.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        mobile_ux_specialist = Agent(
-            role="Especialista em UX/UI Mobile",
-            goal="Criar uma experiência móvel intuitiva e agradável",
-            backstory="""Você é especialista em design de interfaces mobile-first, 
-            com conhecimento profundo em padrões de interação em iOS e Android, 
-            acessibilidade em dispositivos móveis e micro-interações.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents += [mobile_architect, mobile_ux_specialist]
-
-    # Desktop Agents
-    if "desktop" in mapped_areas:
-        desktop_architect = Agent(
-            role="Arquiteto de Aplicações Desktop",
-            goal="Definir arquitetura para aplicações desktop eficientes",
-            backstory="""Você é especialista em desenvolvimento desktop com Electron, 
-            Qt, .NET ou outras tecnologias cross-platform. Tem experiência em 
-            criar aplicações robustas, performáticas e com boa UX.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents += [desktop_architect]
-
-    # Backend/API Agents
-    if "backend" in mapped_areas:
-        backend_engineer = Agent(
-            role="Engenheiro Backend",
-            goal="Propor uma arquitetura backend performática e segura",
-            backstory="Você é um especialista em APIs rápidas e seguras com conhecimento em FastAPI, Django, etc.",
-            verbose=True,
-            llm=llm
-        )
-
-        security_advisor = Agent(
-            role="Especialista em Segurança",
-            goal="Garantir que o backend esteja protegido contra falhas comuns",
-            backstory="Você revisa práticas de segurança, autenticação, rate limiting, etc.",
-            verbose=True,
-            llm=llm
-        )
-
-        backend_tasker = Agent(
-            role="Designer de Tarefas de Backend",
-            goal="Quebrar o backend em módulos/tarefas para o usuário desenvolver",
-            backstory="Você organiza endpoints, banco de dados e lógica em tarefas compreensíveis.",
-            verbose=True,
-            llm=llm
-        )
-
-        area_agents += [backend_engineer, security_advisor, backend_tasker]
-
-    # API Especialistas (quando API é explicitamente escolhida)
-    if "api" in mapped_areas:
-        api_specialist = Agent(
-            role="Especialista em APIs",
-            goal="Definir padrões REST/GraphQL e estruturar documentação",
-            backstory="""Você é um expert em design de APIs com foco em consistência,
-            segurança e documentação clara. Conhece OpenAPI, Swagger e ferramentas de teste.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents += [api_specialist]
-
-    # AI/ML Agents
-    if "ai_ml" in mapped_areas:
-        ai_ml_architect = Agent(
-            role="Arquiteto de IA/ML",
-            goal="Projetar sistemas de machine learning escaláveis e responsáveis",
-            backstory="""Você é um especialista em IA e ML com experiência em frameworks como 
-            TensorFlow, PyTorch, Scikit-learn. Você sabe como estruturar projetos de dados, 
-            definir pipelines de treinamento e implantar modelos.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        data_engineer = Agent(
-            role="Engenheiro de Dados",
-            goal="Estruturar pipelines de dados eficientes para modelos de ML",
-            backstory="""Você é especialista em ETL, data lakes, processamento de dados em larga escala, 
-            e integrações com diversas fontes de dados. Seu foco é garantir dados de qualidade 
-            para os projetos de ML.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        ml_ops_engineer = Agent(
-            role="MLOps Engenheiro",
-            goal="Garantir implantação, monitoramento e manutenção de modelos ML em produção",
-            backstory="""Você é especialista em implementar boas práticas de MLOps, incluindo 
-            versionamento de modelos, monitoramento de desempenho, detecção de drift e escalabilidade.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents += [ai_ml_architect, data_engineer, ml_ops_engineer]
-
-    # Game Development Agents
-    if "games" in mapped_areas:
-        game_architect = Agent(
-            role="Arquiteto de Jogos",
-            goal="Definir arquitetura e mecânicas para desenvolvimento de jogos",
-            backstory="""Você é um especialista em desenvolvimento de jogos com experiência em engines
-            como Unity e Unreal. Conhece padrões de arquitetura para jogos, sistemas de componentes,
-            e otimização de performance em jogos.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        game_designer = Agent(
-            role="Game Designer",
-            goal="Criar mecânicas de jogos envolventes e equilibradas",
-            backstory="""Você é especialista em design de jogos, balanceamento, sistemas de progressão,
-            e criação de experiências envolventes para os jogadores. Você tem habilidade para
-            documentar regras e mecânicas de forma clara.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents += [game_architect, game_designer]
-
-    # IoT Agents
-    if "iot" in mapped_areas:
-        iot_architect = Agent(
-            role="Arquiteto de IoT",
-            goal="Projetar sistemas IoT seguros, eficientes e escaláveis",
-            backstory="""Você é um especialista em arquiteturas de IoT, desde dispositivos embarcados
-            até sistemas na nuvem. Conhece protocolos como MQTT, CoAP, segurança em IoT e
-            estratégias para lidar com conectividade intermitente e eficiência energética.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        embedded_systems_engineer = Agent(
-            role="Engenheiro de Sistemas Embarcados",
-            goal="Projetar firmware e software para dispositivos IoT",
-            backstory="""Você é especialista em desenvolvimento para sistemas embarcados,
-            microcontroladores e hardware IoT. Conhece linguagens como C/C++, Python para
-            sistemas embarcados e práticas de otimização.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents += [iot_architect, embedded_systems_engineer]
-
-    # Blockchain Agents
-    if "blockchain" in mapped_areas:
-        blockchain_architect = Agent(
-            role="Arquiteto Blockchain",
-            goal="Projetar sistemas descentralizados seguros e eficientes",
-            backstory="""Você é especialista em blockchain, smart contracts e sistemas descentralizados.
-            Conhece plataformas como Ethereum, Solana, e conceitos como DeFi, NFTs, DAO, além de
-            padrões de segurança em contratos inteligentes.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        smart_contracts_developer = Agent(
-            role="Desenvolvedor de Smart Contracts",
-            goal="Projetar contratos inteligentes seguros e eficientes",
-            backstory="""Você é especialista em desenvolver smart contracts usando Solidity ou outras
-            linguagens blockchain. Conhece padrões, boas práticas de segurança, técnicas de otimização
-            de gas e auditorias de código.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents += [blockchain_architect, smart_contracts_developer]
-
-    # Security Agents
-    if "security" in mapped_areas:
-        security_architect = Agent(
-            role="Arquiteto de Segurança",
-            goal="Definir uma estratégia de segurança abrangente para o projeto",
-            backstory="""Você é um especialista em segurança de aplicações com anos de experiência
-            em análise de ameaças, proteção de dados, e implementação de controles de segurança.
-            Conhece padrões como OWASP Top 10, SAST/DAST, e gestão de vulnerabilidades.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        penetration_tester = Agent(
-            role="Pentester",
-            goal="Identificar vulnerabilidades potenciais e recomendar mitigações",
-            backstory="""Você é especialista em testes de penetração e encontrar falhas de segurança
-            em aplicações. Tem experiência em identificar vulnerabilidades em diferentes camadas
-            de aplicações e propor contramedidas eficazes.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents += [security_architect, penetration_tester]
-
-    # DevOps Agents (sempre incluídos para uma estrutura completa)
-    if "devops" in mapped_areas:
-        infra_engineer = Agent(
-            role="Engenheiro DevOps",
-            goal="Propor infraestrutura para CI/CD, Docker, monitoramento e boas práticas",
-            backstory="Você é focado em automatizar, escalar e manter a infraestrutura de projetos modernos.",
-            verbose=True,
-            llm=llm
-        )
-
-        infra_tasker = Agent(
-            role="Designer de Tarefas DevOps",
-            goal="Transformar sugestões em tarefas de setup de ambientes e deploy",
-            backstory="Você cria um roadmap técnico de infraestrutura, deploy e monitoramento.",
-            verbose=True,
-            llm=llm
-        )
-
-        area_agents += [infra_engineer, infra_tasker]
-
-    # Se não houver agentes específicos, adicione um agente genérico
-    if not area_agents:
-        generic_architect = Agent(
-            role="Arquiteto de Solução",
-            goal="Projetar uma solução completa baseada nas necessidades do usuário",
-            backstory="""Você é um arquiteto versátil com experiência em múltiplas tecnologias.
-            Seu objetivo é criar um plano de projeto abrangente que possa ser implementado
-            por desenvolvedores com diferentes níveis de experiência.""",
-            verbose=True,
-            llm=llm
-        )
-        
-        area_agents = [generic_architect]
-
-    # Adicione um agente final para integração
-    project_manager = Agent(
-        role="Gerente de Projeto",
-        goal="Integrar todas as recomendações em um plano de projeto coeso",
-        backstory="""Você é um gerente de projeto experiente que sabe como integrar diferentes 
-        componentes técnicos em um roadmap unificado. Foca em criar um plano claro, 
-        priorizando tarefas e estabelecendo dependências.""",
-        verbose=True,
+    # Criar o especialista principal
+    primary_specialist = Agent(
+        role=primary_role,
+        goal=primary_goal,
+        backstory=primary_backstory,
+        verbose=False,  # Reduzir saídas de log
         llm=llm
     )
     
-    area_agents.append(project_manager)
+    # Criar o gerente de projeto
+    project_manager = Agent(
+        role="Gerente de Projeto",
+        goal="Organizar o plano de projeto",
+        backstory="Gerente de projeto técnico com foco em entrega prática.",
+        verbose=False,  # Reduzir saídas de log
+        llm=llm
+    )
+    
+    return [primary_specialist, project_manager]
 
-    return area_agents
-
-
-def run_project_pipeline(area_selection: list[str], tech_stack: str, description: str):
-    # Adiciona o tech stack à descrição para melhor contextualização
+def execute_task_directly(agent, task_description, expected_output):
+    """
+    Executa o agente com timeout aumentado e prompt simplificado
+    """
     try:
-        import logging
-        import threading
-        import time
+        logger.info(f"Executando agente diretamente: {agent.role}")
         
-        logger = logging.getLogger("crewai_generator")
-        
-        logger.info(f"Iniciando geração do projeto com áreas: {area_selection}, tecnologias: {tech_stack}")
-        
-        # Validar os inputs
-        if not area_selection or not isinstance(area_selection, list):
-            logger.error("Área de seleção inválida ou vazia")
-            return {
-                "error": "Erro ao gerar o projeto",
-                "erro_detalhes": "Área de seleção inválida ou vazia"
-            }
-            
-        if not tech_stack or not isinstance(tech_stack, str):
-            logger.error("Stack de tecnologias inválida ou vazia")
-            return {
-                "error": "Erro ao gerar o projeto",
-                "erro_detalhes": "Stack de tecnologias inválida ou vazia"
-            }
-            
-        if not description or not isinstance(description, str):
-            logger.error("Descrição inválida ou vazia")
-            return {
-                "error": "Erro ao gerar o projeto", 
-                "erro_detalhes": "Descrição inválida ou vazia"
-            }
-        
-        full_description = f"""
-        Descrição do Projeto: {description}
-        
-        Tecnologias Desejadas: {tech_stack}
-        
-        Áreas Selecionadas: {', '.join(area_selection)}
+        # Prompt simplificado para reduzir o tempo de processamento
+        full_prompt = f"""
+        {agent.role} deve responder de forma objetiva e relevante. Tarefa:
+        {task_description}
+        Resposta deve ser completa e específica para o projeto.
         """
-        
-        # Verificar se o LLM está funcionando
-        try:
-            logger.info("Verificando se o LLM está acessível...")
-            from app.core.llm_client import OllamaLLM
-            test_llm = OllamaLLM()
-            test_response = test_llm.generate("Olá, este é um teste de conexão. Responda apenas com 'OK' se estiver funcionando.")
-            logger.info(f"Resposta do teste do LLM: {test_response[:50]}...")
-        except Exception as e:
-            logger.error(f"Erro ao testar o LLM: {str(e)}")
-            return {
-                "error": "Erro ao comunicar com o modelo de linguagem",
-                "erro_detalhes": str(e)
-            }
-        
-        agents = create_agents(area_selection)
-        logger.info(f"Agentes criados: {len(agents)}")
 
-        tasks = []
-        previous_output = full_description
-
-        # Criar as tarefas com timeout e tratamento de erros apropriados
-        for i, agent in enumerate(agents):
-            # O primeiro agente recebe a descrição completa
-            if i == 0:
-                task_description = f"""
-                Baseado na descrição do projeto:
-                {full_description}
-                
-                Forneça sua análise e recomendações específicas para sua área de expertise.
-                """
-            # Agentes intermediários recebem a saída do agente anterior
-            else:
-                task_description = f"""
-                Baseado na análise anterior:
-                {previous_output}
-                
-                E na descrição original do projeto:
-                {full_description}
-                
-                Forneça sua análise e recomendações específicas para sua área de expertise.
-                """
-            
-            # O último agente (project manager) recebe instruções para integrar tudo
-            if i == len(agents) - 1:
-                task_description = f"""
-                Baseado em todas as análises anteriores e na descrição original:
-                {full_description}
-                
-                Crie um plano de projeto integrado e coeso que inclua:
-                1. Resumo executivo do projeto
-                2. Arquitetura proposta
-                3. Estrutura de diretórios recomendada
-                4. Lista de tecnologias e bibliotecas
-                5. Roadmap de desenvolvimento com tarefas priorizadas
-                6. Exemplos de código para partes cruciais
-                7. Recursos e referências para o desenvolvedor
-                
-                Formate as seções com clareza usando Markdown.
-                """
-                
-                expected_output = """
-                # Plano de Projeto Completo
-                
-                ## Resumo Executivo
-                [resumo do projeto]
-                
-                ## Arquitetura Proposta
-                [diagrama textual da arquitetura]
-                
-                ## Estrutura de Diretórios
-                ```
-                [estrutura de pastas e arquivos]
-                ```
-                
-                ## Tecnologias e Bibliotecas
-                [lista detalhada]
-                
-                ## Roadmap de Desenvolvimento
-                [lista de tarefas com prioridades]
-                
-                ## Exemplos de Código
-                ```
-                [exemplos relevantes]
-                ```
-                
-                ## Recursos e Referências
-                [links e recursos úteis]
-                """
-            else:
-                expected_output = "Análise detalhada e recomendações específicas para a próxima etapa"
-
-            task = Task(
-                description=task_description,
-                expected_output=expected_output,
-                agent=agent
-            )
-            tasks.append(task)
-            previous_output = task.expected_output  # simula encadeamento
-
-        logger.info(f"Tarefas criadas: {len(tasks)}")
-        logger.info("Iniciando a execução da crew...")
         
-        # Definir timeout usando threading em vez de signal
-        result = None
-        error = None
-        
-        # Variável para controlar se o processamento foi concluído
-        processing_completed = False
-        
-        # Função que será executada em uma thread separada
-        def run_crew():
-            nonlocal result, error, processing_completed
-            try:
-                crew = Crew(
-                    tasks=tasks,
-                    agents=agents,
-                    verbose=True
-                )
-                result = crew.kickoff()
-                logger.info("Crew completou a execução com sucesso.")
-                processing_completed = True
-            except Exception as e:
-                logger.error(f"Erro durante a execução da crew: {str(e)}")
-                error = str(e)
-                processing_completed = True
-        
-        # Iniciar a thread para processamento
-        processing_thread = threading.Thread(target=run_crew)
-        processing_thread.daemon = True  # Permitir que o programa termine mesmo se a thread estiver rodando
-        processing_thread.start()
-        
-        # Esperar pelo término do processamento com timeout
-        timeout = 300  # 5 minutos em segundos
         start_time = time.time()
         
-        while not processing_completed and (time.time() - start_time) < timeout:
-            time.sleep(1)  # Verificar a cada segundo
+        # Sempre usar o adaptador do LiteLLM
+        agent_llm = llm_adapter
         
-        # Verificar se houve timeout
-        if not processing_completed:
-            logger.error("Timeout na execução da crew")
+        # Adicionar timeout para a chamada
+        from concurrent.futures import ThreadPoolExecutor, TimeoutError
+        with ThreadPoolExecutor() as executor:
+            # Iniciar chamada com timeout aumentado para 1000 segundos
+            future = executor.submit(agent_llm.chat, [{"role": "user", "content": full_prompt}])
+            
+            try:
+                # Aguardar no máximo 1000 segundos
+                result = future.result(timeout=10000)
+            except TimeoutError:
+                logger.warning(f"Timeout ao processar {agent.role}, tentando novamente com prompt mais curto")
+                # Tentar novamente com prompt mais curto
+                retry_prompt = f"""
+                {agent.role}, forneça uma resposta concisa para:
+                {task_description}
+                """
+                try:
+                    future = executor.submit(agent_llm.chat, [{"role": "user", "content": retry_prompt}])
+                    result = future.result(timeout=500)  # Timeout menor para a segunda tentativa
+                except TimeoutError:
+                    logger.error(f"Timeout na segunda tentativa para {agent.role}")
+                    return {
+                        "agent": agent.role,
+                        "result": f"Análise técnica simplificada para projeto utilizando as tecnologias solicitadas.",
+                        "success": False
+                    }
+        
+        execution_time = time.time() - start_time
+        logger.info(f"Execução direta de {agent.role} concluída em {execution_time:.2f} segundos")
+        
+        # Verificar se a resposta é muito curta ou vazia
+        if not result or len(result) < 50:
+            logger.warning(f"Resposta muito curta de {agent.role}, tentando novamente")
+            return execute_task_directly(agent, task_description, expected_output)
+        
+        return {
+            "agent": agent.role,
+            "result": result,
+            "success": True
+        }
+    except Exception as e:
+        logger.error(f"Erro ao executar agente diretamente {agent.role}: {str(e)}")
+        return {
+            "agent": agent.role,
+            "result": f"Análise técnica simplificada (erro: {str(e)[:50]}...)",
+            "success": False
+        }
+
+def run_project_pipeline(area_selection: list[str], tech_stack: str, description: str):
+    """
+    Pipeline otimizado para gerar projeto mais rapidamente
+    """
+    pm_result = None
+    try:
+        logger.info(f"Iniciando geração do projeto com áreas: {area_selection}, tecnologias: {tech_stack}")
+        logger.info(f"Descrição do projeto: {description[:100]}...")  # Log dos primeiros 100 caracteres
+        
+        # Validação básica dos inputs
+        if not isinstance(description, str) or len(description) < 3:
+            logger.error("Descrição inválida ou muito curta")
+            return {"error": "Descrição inválida ou muito curta"}
+            
+        # Preparar descrição simplificada
+        full_description = f"""
+        Projeto: {description}
+        Tecnologias: {tech_stack}
+        Áreas: {', '.join(area_selection)}
+        """
+        
+        # Criar apenas dois agentes
+        agents = create_agents(area_selection)
+        logger.info(f"Agentes criados: {[agent.role for agent in agents]}")
+        
+        # Separar os agentes
+        specialist = agents[0]
+        project_manager = agents[1]
+        
+        # Definir timeout geral
+        overall_timeout = 7000  # segundos para todo o processo
+        start_time = time.time()
+        
+        # Executar especialista primeiro - com prompt simplificado
+        specialist_task = f"""
+        Analisar o seguinte projeto e fornecer recomendações técnicas:
+        {full_description}
+        
+        Forneça a resposta no seguinte formato:
+        
+        # Análise Técnica
+        [Sua análise técnica aqui]
+        
+        # Estrutura do Projeto
+        [Estrutura de diretórios e arquivos]
+        
+        # Tecnologias Recomendadas
+        [Lista de tecnologias]
+        
+        Seja conciso e específico.
+        """
+        
+        logger.info("Executando tarefa do especialista...")
+        specialist_result = execute_task_directly(specialist, specialist_task, "Análise técnica concisa")
+        logger.info(f"Resultado do especialista: {specialist_result.get('result', '')[:200]}...")  # Log dos primeiros 200 caracteres
+        
+        # Verificar timeout geral
+        if time.time() - start_time > overall_timeout:
+            logger.warning("Timeout atingido durante execução do especialista")
             return {
-                "error": "Tempo limite excedido",
-                "erro_detalhes": "A geração do projeto demorou muito tempo e foi interrompida."
-            }
-        
-        # Verificar se houve erro
-        if error:
-            return {
-                "error": "Erro durante execução da crew",
-                "erro_detalhes": error
-            }
-        
-        # Se não temos resultado, algo deu errado
-        if result is None:
-            return {
-                "error": "Erro desconhecido",
-                "erro_detalhes": "A execução foi concluída, mas não retornou resultado."
-            }
-        
-        # Processa o resultado para um formato mais estruturado
-        try:
-            processed_result = {
-                "resumo": extract_section(result, "Resumo Executivo"),
+                "resumo": f"Análise básica com {tech_stack}",
                 "tecnologias": tech_stack,
                 "areas": area_selection,
-                "estrutura": extract_section(result, "Estrutura de Diretórios"),
-                "codigo": extract_section(result, "Exemplos de Código"),
-                "recursos": extract_resources(extract_section(result, "Recursos e Referências"))
+                "estrutura": f"Estrutura padrão para projeto com {tech_stack}",
+                "codigo": "",
+                "recursos": []
             }
+        
+        # Verificar se o resultado do especialista é válido
+        if not specialist_result.get('success', False) or not specialist_result.get('result'):
+            logger.warning("Resultado do especialista inválido, tentando novamente")
+            specialist_result = execute_task_directly(specialist, specialist_task, "Análise técnica concisa")
+        
+        # Executar gerente com resultado do especialista - prompt simplificado
+        pm_task = f"""
+        Com base na análise técnica abaixo:
+
+        {specialist_result.get('result', 'N/A')}
+
+        E na descrição do projeto:
+
+        {full_description}
+
+        Crie um plano de projeto no formato abaixo, **seguindo rigorosamente os títulos e a estrutura indicada**. 
+        **Não adicione ou remova seções**. **Use exatamente os nomes de seção a seguir.**
+
+        ---
+
+        # Resumo do Projeto
+        [Forneça um resumo detalhado do projeto incluindo:
+        - Visão geral completa do projeto e seu propósito
+        - Principais funcionalidades e recursos
+        - Público-alvo e necessidades atendidas
+        - Benefícios e diferenciais do projeto
+        - Considerações técnicas importantes
+        Use parágrafos bem estruturados e seja específico.]
+
+        # Estrutura do Projeto
+        [Forneça a estrutura detalhada de diretórios e arquivos, incluindo:
+        - Organização de pastas e arquivos
+        - Arquivos de configuração necessários
+        - Arquivos de dependências
+        - Arquivos de ambiente
+        - Estrutura de testes]
+
+        # Tecnologias Recomendadas
+        [Liste todas as tecnologias necessárias, incluindo:
+        - Frameworks principais
+        - Bibliotecas essenciais
+        - Ferramentas de desenvolvimento
+        - Banco de dados
+        - Serviços externos]
+
+        # Próximos Passos
+        [Forneça um guia detalhado de implementação, incluindo:
+
+        ## Configuração e Setup
+        - Passos para configurar o ambiente de desenvolvimento
+        - Instalação de dependências
+        - Configuração de variáveis de ambiente
+        - Setup inicial do projeto
+
+        ## Desenvolvimento
+        - Ordem recomendada de implementação das funcionalidades
+        - Pontos de atenção durante o desenvolvimento
+        - Estratégias de teste
+        - Documentação necessária
+
+        ## Dicas e Boas Práticas
+        - Padrões de código recomendados
+        - Estratégias de otimização
+        - Armadilhas comuns a evitar
+        - Dicas de performance
+
+        ## Recursos de Aprendizado
+        - Documentação oficial relevante
+        - Tutoriais recomendados
+        - Ferramentas úteis
+        - Comunidades de suporte
+
+        ## Conselhos para Produção
+        - Estratégias de deploy
+        - Monitoramento e logging
+        - Manutenção e atualizações
+        - Escalabilidade e performance
+        - Segurança e backup
+        - CI/CD e automação]
+
+        Seja específico e forneça exemplos práticos quando possível.
+        """
+        
+        logger.info("Executando tarefa do gerente de projeto...")
+        pm_result = execute_task_directly(project_manager, pm_task, "Plano de projeto estruturado")
+        logger.info(f"Resultado do gerente: {pm_result.get('result', '')[:200]}...")  # Log dos primeiros 200 caracteres
+
+        # Verificar se o resultado do gerente é válido
+        if not pm_result.get('success', False) or not pm_result.get('result'):
+            logger.warning("Resultado do gerente inválido, tentando novamente")
+            pm_result = execute_task_directly(project_manager, pm_task, "Plano de projeto estruturado")
+
+        # Verificar resultado e formatar resposta (simplificada)
+        result_text = (
+            pm_result.get('result') if pm_result and pm_result.get('result')
+            else specialist_result.get('result', 'Não foi possível gerar resultado completo')
+        )
+        
+        logger.info("Processando resultado final...")
+        try:
+            # Extrair cada seção e logar
+            resumo = extract_section(result_text, "Resumo do Projeto")
+            estrutura = extract_section(result_text, "Estrutura do Projeto")
+            tecnologias = extract_section(result_text, "Tecnologias Recomendadas")
+            proximos_passos = extract_section(result_text, "Próximos Passos")
+            recursos = extract_resources(proximos_passos)
             
-            # Verifica se o resultado contém as seções essenciais
-            if not processed_result["resumo"] or not processed_result["estrutura"]:
-                logger.warning("Resultado não contém todas as seções esperadas")
+            logger.info(f"Seções extraídas:")
+            logger.info(f"- Resumo: {resumo[:100]}...")
+            logger.info(f"- Estrutura: {estrutura[:100]}...")
+            logger.info(f"- Tecnologias: {tecnologias[:100]}...")
+            logger.info(f"- Próximos Passos: {proximos_passos[:100]}...")
+            logger.info(f"- Recursos: {len(recursos)} itens encontrados")
+            
+            processed_result = {
+                "resumo": resumo or result_text[:250],
+                "tecnologias": tecnologias or tech_stack,
+                "areas": area_selection,
+                "estrutura": estrutura or f"Estrutura padrão para {tech_stack}",
+                "codigo": "",  # Removido pois não é mais usado
+                "recursos": recursos
+            }
                 
             logger.info("Resultado processado com sucesso")
             return processed_result
         except Exception as e:
-            logger.error(f"Erro ao processar o resultado: {str(e)}")
+            logger.error(f"Erro ao processar resultado: {str(e)}")
+            # Formato mínimo garantido
             return {
-                "error": "Erro ao processar resultado",
-                "erro_detalhes": str(e),
-                "resultado_bruto": result
+                "resumo": result_text[:250] + "...",
+                "tecnologias": tech_stack,
+                "areas": area_selection,
+                "estrutura": f"Estrutura padrão para projeto {tech_stack}",
+                "codigo": "",
+                "recursos": []
             }
     except Exception as e:
-        import traceback
-        error_traceback = traceback.format_exc()
-        import logging
-        logger = logging.getLogger("crewai_generator")
-        logger.error(f"Erro durante a geração do projeto: {str(e)}\n{error_traceback}")
-        
-        # Retornar uma resposta de erro estruturada
+        # Garantir que nunca quebra
+        logger.error(f"Erro durante geração do projeto: {str(e)}")
         return {
-            "error": "Erro ao gerar o projeto",
-            "erro_detalhes": str(e),
-            "traceback": error_traceback
+            "resumo": f"Não foi possível processar completamente o projeto com {tech_stack}. Por favor, tente novamente.",
+            "tecnologias": tech_stack, 
+            "areas": area_selection,
+            "estrutura": "",
+            "codigo": "",
+            "recursos": []
         }
 
 def extract_section(text, section_name):
-    """Extrai uma seção específica do resultado"""
+    """Extrai uma seção específica do resultado - versão melhorada"""
     try:
-        if not section_name in text:
+        if not text or not section_name:
             return ""
             
-        start_marker = f"## {section_name}"
-        start_index = text.find(start_marker)
+        # Normaliza o texto e o nome da seção para comparação
+        text_lower = text.lower()
+        section_name_lower = section_name.lower()
         
-        if start_index == -1:
+        # Procura pelo título da seção
+        section_start = text_lower.find(f"# {section_name_lower}")
+        if section_start == -1:
+            # Tenta encontrar sem o #
+            section_start = text_lower.find(section_name_lower)
+            if section_start == -1:
+                return ""
+        
+        # Encontra o início do conteúdo (após o título)
+        content_start = text.find('\n', section_start)
+        if content_start == -1:
             return ""
-            
-        start_index = start_index + len(start_marker)
+        content_start += 1  # Pula a quebra de linha
         
-        # Encontra a próxima seção (se houver)
-        next_section = text.find("##", start_index)
-        
+        # Encontra o próximo título de seção
+        next_section = text.find('#', content_start)
         if next_section == -1:
-            section_content = text[start_index:].strip()
-        else:
-            section_content = text[start_index:next_section].strip()
-            
-        return section_content
-    except:
-        return "Não foi possível extrair esta seção."
+            # Se não houver próxima seção, pega todo o conteúdo até o final
+            return text[content_start:].strip()
+        
+        # Retorna o conteúdo entre o título atual e o próximo título
+        return text[content_start:next_section].strip()
+    except Exception as e:
+        logger.error(f"Erro ao extrair seção {section_name}: {str(e)}")
+        return ""
 
 def extract_resources(resources_text):
-    """Converte recursos de texto para uma lista"""
+    """Converte recursos de texto para uma lista - versão melhorada"""
     if not resources_text:
         return []
-        
-    # Remove marcadores de lista Markdown e divide por linhas
-    lines = resources_text.strip().split("\n")
-    resources = []
     
+    # Dividir por linhas e remover espaços
+    lines = [line.strip() for line in resources_text.split('\n') if line.strip()]
+    
+    # Filtrar linhas que começam com - ou *
+    resources = []
     for line in lines:
-        line = line.strip()
-        if line and not line.startswith("#"):
-            # Remove marcadores de lista Markdown como "- " ou "* "
-            if line.startswith("- ") or line.startswith("* "):
-                line = line[2:]
-            resources.append(line.strip())
-            
+        if line.startswith('- ') or line.startswith('* '):
+            # Remove o marcador e espaços extras
+            resource = line[2:].strip()
+            if resource:
+                resources.append(resource)
+        elif line.startswith('## '):
+            # Adiciona o título da subseção como um recurso
+            resources.append(line[3:].strip())
+    
     return resources

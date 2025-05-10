@@ -4,6 +4,7 @@ import os
 import time
 import logging
 from dotenv import load_dotenv
+from typing import Dict
 
 # Configuração de logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -130,72 +131,63 @@ def run_network_diagnostics():
     
     return results
 
-def debug_service_connectivity():
-    """Função principal para diagnóstico de conectividade entre serviços"""
-    logger.info("Iniciando diagnóstico de rede entre serviços...")
-    
-    try:
-        results = run_network_diagnostics()
-        
-        # Imprime resultados formatados
-        logger.info("=== Resultados do Diagnóstico de Rede ===")
-        
-        for service_name, service_results in results["services"].items():
-            logger.info(f"\n--- Serviço: {service_name} ---")
-            
-            tcp_result = service_results.get("tcp_connectivity", {})
-            http_result = service_results.get("http_connectivity", {})
-            
-            logger.info(f"TCP: {'✅ Conectado' if tcp_result.get('success') else '❌ Falha'}")
-            if not tcp_result.get('success'):
-                logger.info(f"  Detalhes: {tcp_result.get('details')}")
-                
-            logger.info(f"HTTP: {'✅ Conectado' if http_result.get('success') else '❌ Falha'}")
-            if http_result.get('success'):
-                http_details = http_result.get('details', {})
-                logger.info(f"  Status: {http_details.get('status')}")
-                logger.info(f"  Tempo de resposta: {http_details.get('response_time')}")
-            else:
-                http_details = http_result.get('details', {})
-                logger.info(f"  Erro: {http_details.get('error')}")
-        
-        # Verificar se todos os serviços estão conectados
-        all_connected = all([
-            results["services"][svc].get("tcp_connectivity", {}).get("success", False) and 
-            results["services"][svc].get("http_connectivity", {}).get("success", False)
-            for svc in results["services"]
-        ])
-        
-        if all_connected:
-            logger.info("\n✅ TODOS OS SERVIÇOS ESTÃO CONECTADOS E RESPONDENDO CORRETAMENTE")
-        else:
-            logger.error("\n❌ ALGUNS SERVIÇOS NÃO ESTÃO CONECTADOS OU RESPONDENDO CORRETAMENTE")
-            
-            # Sugestões de troubleshooting
-            logger.info("\n=== Sugestões para Troubleshooting ===")
-            
-            for service_name, service_results in results["services"].items():
-                tcp_success = service_results.get("tcp_connectivity", {}).get("success", False)
-                http_success = service_results.get("http_connectivity", {}).get("success", False)
-                
-                if not tcp_success or not http_success:
-                    logger.info(f"\nProblemas com {service_name}:")
-                    
-                    if not tcp_success:
-                        logger.info(f"  • Verifique se o contêiner do {service_name} está em execução: docker-compose ps")
-                        logger.info(f"  • Verifique as configurações de rede no docker-compose.yml")
-                        logger.info(f"  • Verifique se o serviço está expondo a porta correta")
-                    
-                    if tcp_success and not http_success:
-                        logger.info(f"  • O serviço {service_name} está ativo, mas a API não está respondendo como esperado")
-                        logger.info(f"  • Verifique os logs do serviço: docker-compose logs {service_name}")
-                        logger.info(f"  • Verifique se a aplicação está sendo inicializada corretamente")
-        
-        return results
-        
-    except Exception as e:
-        logger.error(f"Erro durante diagnóstico de rede: {str(e)}")
-        return {"error": str(e)}
+def debug_service_connectivity() -> Dict:
+    results = []
+    services = [
+        {
+            "name": "CrewAI",
+            "url": f"{os.getenv('CREWAI_BASE_URL', 'http://crewai:8004')}/health",
+            "timeout": 5
+        },
+        {
+            "name": "Ollama",
+            "url": f"{os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')}/api/version",
+            "timeout": 5
+        }
+    ]
+
+    for service in services:
+        try:
+            start_time = time.time()
+            response = requests.get(service["url"], timeout=service["timeout"])
+            response_time = time.time() - start_time
+
+            results.append({
+                "name": service["name"],
+                "url": service["url"],
+                "success": response.ok,
+                "status_code": response.status_code,
+                "response_time": f"{response_time:.2f}s",
+                "data": response.json() if response.ok else None
+            })
+        except requests.exceptions.Timeout:
+            results.append({
+                "name": service["name"],
+                "url": service["url"],
+                "success": False,
+                "error": f"Timeout após {service['timeout']}s"
+            })
+        except requests.exceptions.ConnectionError as e:
+            results.append({
+                "name": service["name"],
+                "url": service["url"],
+                "success": False,
+                "error": str(e)
+            })
+        except Exception as e:
+            results.append({
+                "name": service["name"],
+                "url": service["url"],
+                "success": False,
+                "error": f"Erro inesperado: {str(e)}"
+            })
+
+    all_success = all(service["success"] for service in results)
+    return {
+        "success": all_success,
+        "services": results,
+        "message": "✅ Todos os serviços estão conectados e respondendo corretamente" if all_success else "❌ ALGUNS SERVIÇOS NÃO ESTÃO CONECTADOS OU RESPONDENDO CORRETAMENTE"
+    }
 
 if __name__ == "__main__":
     debug_service_connectivity() 

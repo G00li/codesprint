@@ -29,7 +29,7 @@ interface BackendTestResult {
   status?: number;
   statusText?: string;
   responseTime?: string;
-  data?: unknown;
+  data?: Record<string, unknown>;
   error?: string;
 }
 
@@ -96,7 +96,7 @@ export default function ManualDiagnostico() {
     
     try {
       console.log('Iniciando teste rápido do backend');
-      const response = await fetch('/api/teste-backend');
+      const response = await fetch('/api/teste-rapido');
       const data = await response.json();
       console.log('Resultado do teste rápido:', data);
       setBackendTest(data);
@@ -120,7 +120,7 @@ export default function ManualDiagnostico() {
           <div>
             <h3 className="text-lg font-medium text-blue-800 dark:text-blue-300">Teste Rápido de Conectividade</h3>
             <p className="text-sm text-blue-600 dark:text-blue-400">
-              Verifica rapidamente a conectividade entre o frontend e o backend
+              Verifica rapidamente a conectividade com todos os serviços
             </p>
           </div>
           <button
@@ -144,6 +144,7 @@ export default function ManualDiagnostico() {
             ) : (
               <div className="text-sm">
                 <p className="mb-2"><strong>URL do backend configurada:</strong> {backendTest.backendUrl}</p>
+                <p className="mb-2"><strong>Tempo total do teste:</strong> {backendTest.testTime}</p>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
                   {backendTest.results?.map((result: BackendTestResult, index: number) => (
                     <div 
@@ -163,6 +164,11 @@ export default function ManualDiagnostico() {
                           <p className="text-green-600 dark:text-green-400 text-xs">
                             Tempo: {result.responseTime}
                           </p>
+                          {result.data && (
+                            <pre className="text-xs mt-1 bg-white dark:bg-gray-800 p-1 rounded">
+                              {JSON.stringify(result.data, null, 2)}
+                            </pre>
+                          )}
                         </>
                       ) : (
                         <p className="text-red-700 dark:text-red-400 text-xs">
@@ -210,6 +216,7 @@ export default function ManualDiagnostico() {
             <li>Diagnóstico de rede: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">http://backend:8000/diagnose-network</code></li>
             <li>CrewAI: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">http://crewai:8004/health</code></li>
             <li>Ollama: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">http://ollama:11434/api/version</code></li>
+            <li>DB: <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded">http://backend:8000/api/health/db</code></li>
           </ul>
           <p className="text-xs text-gray-500 mt-2">
             Nota: Use os nomes dos serviços Docker (backend, crewai, ollama) em vez de localhost 
