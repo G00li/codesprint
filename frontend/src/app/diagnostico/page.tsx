@@ -22,6 +22,7 @@ interface DiagnosticoData {
 
 export default function DiagnosticoPage() {
   const [diagnostico, setDiagnostico] = useState<DiagnosticoData | null>(null);
+  const [dbStatus, setDbStatus] = useState<TestData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,12 +30,28 @@ export default function DiagnosticoPage() {
     const runDiagnostico = async () => {
       try {
         setLoading(true);
-        const response = await fetch('/api/diagnostico');
-        if (!response.ok) {
-          throw new Error(`Erro ao executar diagnóstico: ${response.status}`);
+        const [diagnosticoResponse, dbResponse] = await Promise.all([
+          fetch('/api/diagnostico'),
+          fetch('/api/health/db')
+        ]);
+
+        if (!diagnosticoResponse.ok) {
+          throw new Error(`Erro ao executar diagnóstico: ${diagnosticoResponse.status}`);
         }
-        const data = await response.json();
-        setDiagnostico(data);
+
+        const diagnosticoData = await diagnosticoResponse.json();
+        setDiagnostico(diagnosticoData);
+
+        // Processar status do banco de dados
+        const dbData = await dbResponse.json();
+        setDbStatus({
+          name: 'Banco de Dados',
+          status: dbResponse.ok ? 'success' : 'error',
+          statusCode: dbResponse.status,
+          data: dbData,
+          summary: dbResponse.ok ? 'Conexão com o banco de dados estabelecida com sucesso' : 'Falha na conexão com o banco de dados'
+        });
+
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Erro desconhecido');
       } finally {
@@ -120,6 +137,36 @@ export default function DiagnosticoPage() {
             <div>
               <h3 className="text-lg font-semibold mb-2">Resultados dos Testes</h3>
               <div className="space-y-4">
+                {dbStatus && (
+                  <div className="border rounded-lg overflow-hidden">
+                    <div className={`p-3 flex justify-between items-center ${
+                      dbStatus.status === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-800 dark:text-green-300' :
+                      dbStatus.status === 'error' ? 'bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300' :
+                      'bg-yellow-50 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-300'
+                    }`}>
+                      <span className="font-medium">{dbStatus.name}</span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase">
+                        {dbStatus.status}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-white dark:bg-gray-800">
+                      {dbStatus.error ? (
+                        <p className="text-red-600 dark:text-red-400">Erro: {dbStatus.error}</p>
+                      ) : (
+                        <div>
+                          {dbStatus.statusCode && <p><strong>Status Code:</strong> {dbStatus.statusCode}</p>}
+                          {dbStatus.data && (
+                            <pre className="mt-2 bg-gray-50 dark:bg-gray-900 p-2 rounded overflow-x-auto text-xs">
+                              {JSON.stringify(dbStatus.data, null, 2)}
+                            </pre>
+                          )}
+                          {dbStatus.summary && <p className="mt-2">{dbStatus.summary}</p>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+                
                 {diagnostico?.tests?.map((test, index) => (
                   <div key={index} className="border rounded-lg overflow-hidden">
                     <div className={`p-3 flex justify-between items-center ${
