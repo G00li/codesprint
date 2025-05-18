@@ -1,52 +1,29 @@
 # 🚀 CodeSprint
 
 [![ETIC](https://img.shields.io/badge/ETIC-Backend2-blue)](https://github.com/seu-usuario/codesprint)
-[![Status](https://img.shields.io/badge/Status-Em%20Desenvolvimento-yellow)](https://github.com/seu-usuario/codesprint)
+[![Status](https://img.shields.io/badge/Status-completo-green)](https://github.com/seu-usuario/codesprint)
 
 ## 📋 Sumário
 - [Sobre o Projeto](#-sobre-o-projeto)
-- [Tecnologias e Ferramentas](#-tecnologias-e-ferramentas)
 - [Instalação](#-instalação)
-- [Funcionalidades](#-funcionalidades)
-- [Arquitetura do Sistema](#-arquitetura-do-sistema)
-- [Diagnóstico e Troubleshooting](#-diagnóstico-e-troubleshooting)
-- [Monitoramento](#-monitoramento)
-- [Contribuição](#-contribuição)
-- [Licença](#-licença)
+- [Como Usar](#-como-usar)
+- [Diagnóstico e Debug](#-diagnóstico-e-debug)
+- [Tecnologias](#-tecnologias)
+- [Workflow da Aplicação](#-workflow-da-aplicação)
+- [Logging e Monitoramento](#-logging-e-monitoramento)
+- [Testes de Conexão](#-testes-de-conexão)
+- [Comandos Makefile](#-comandos-makefile)
 
 ## 🎯 Sobre o Projeto
 
-Bem-vindo ao **CodeSprint**! 🎉
+O CodeSprint é uma plataforma inovadora que automatiza o processo de criação de projetos de software. Utilizando Inteligência Artificial avançada, o sistema permite que desenvolvedores especifiquem suas necessidades através de uma interface intuitiva e recebam um projeto base completo, pronto para desenvolvimento.
 
-O CodeSprint é uma plataforma que utiliza Inteligência Artificial para auxiliar no desenvolvimento de novos projetos. Com uma interface intuitiva e responsiva, desenvolvedores podem especificar suas necessidades e obter um projeto base completo em questão de minutos.
-
-### 🌟 Destaques
-- Desenvolvimento assistido por IA
-- Interface web responsiva
-- Geração de código base
-- Ambiente Docker completo
-- Ferramentas de diagnóstico integradas
-
-## 🛠️ Tecnologias e Ferramentas
-
-### Frontend
-- **React/Next.js** - Framework para interface do usuário
-- **TypeScript** - Tipagem estática
-- **TailwindCSS** - Estilização moderna
-
-### Backend
-- **Python/FastAPI** - API REST de alta performance
-- **SQLAlchemy** - ORM para banco de dados
-- **Pydantic** - Validação de dados
-
-### IA e Processamento
-- **CrewAI** - Orquestração de agentes de IA
-- **Ollama** - Execução de modelos de linguagem
-
-### Infraestrutura
-- **Docker** - Containerização
-- **Redis** - Cache e filas
-- **PostgreSQL** - Banco de dados principal
+### 🌟 Principais Características
+- Geração automática de código base
+- Interface web responsiva e intuitiva
+- Integração com agentes de IA para análise e desenvolvimento
+- Ambiente Docker completo e isolado
+- Sistema robusto de diagnóstico e monitoramento
 
 ## 💻 Instalação
 
@@ -66,116 +43,204 @@ cd codesprint
 
 2. **Inicie os Serviços**
 ```bash
-# Método 1: Script de inicialização
-./start_services.sh
-
-# Método 2: Usando Makefile
+# Iniciar todos os serviços
 make up
+
+# Verificar status
+make status
 ```
 
 3. **Verifique a Instalação**
 ```bash
-./check_services.sh
+# Executar testes de conexão
+make test-connection
 ```
 
-4. **Acesse a Aplicação**
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:8000
-- Documentação API: http://localhost:8000/docs
+## 🎮 Como Usar
 
-### Comandos Makefile Disponíveis
+1. **Acesse a Interface**
+   - Frontend: http://localhost:3000
+   - Backend API: http://localhost:8000
+   - Documentação API: http://localhost:8000/docs
 
-O projeto inclui um Makefile com vários comandos úteis para gerenciar o ambiente:
+2. **Crie um Novo Projeto**
+   - Preencha o formulário com as especificações do projeto
+   - Selecione as tecnologias desejadas
+   - Defina os requisitos funcionais
 
+3. **Acompanhe o Progresso**
+   - Monitore o status da geração
+   - Visualize os logs em tempo real
+   - Receba notificações de conclusão
+
+## 🔍 Diagnóstico e Debug
+
+### Interface de Diagnóstico
+- Acesse: http://localhost:3000/diagnostico
+- Verifique o status de todos os serviços
+- Monitore as conexões entre componentes
+- Visualize logs em tempo real
+
+### Comandos de Diagnóstico
 ```bash
-# Iniciar todos os serviços
-make up
-
-# Parar todos os serviços
-make down
-
-# Reiniciar todos os serviços
-make restart
-
-# Limpar ambiente (remove contêineres e volumes)
-make clean
-
 # Verificar status dos serviços
 make status
 
-# Ver logs de todos os serviços
+# Ver logs detalhados
 make logs
 
-# Ver logs de um serviço específico
-make logs SERVICE=backend
-
-# Executar testes
-make test
-
-# Construir imagens Docker
-make build
+# Testar conexões
+make test-connection
 ```
 
-## ✨ Funcionalidades
+## 🛠️ Tecnologias
 
-### 1. Desenvolvimento Assistido por IA
-- Geração de código base para novos projetos
-- Sugestões de implementação via IA
-- Documentação automática do código gerado
+### Frontend
+- **React/Next.js**: Framework para interface do usuário
+- **TypeScript**: Tipagem estática
+- **TailwindCSS**: Estilização moderna
+- **Axios**: Comunicação com API
 
-### 2. Interface Web
-- Dashboard intuitivo
-- Formulários para especificação de projetos
-- Visualização do progresso de geração
-- Ferramentas de diagnóstico integradas
+### Backend
+- **Python/FastAPI**: API REST de alta performance
+- **Pydantic**: Validação de dados
+- **Poetry**: Gerenciamento de dependências
+- **Pytest**: Testes automatizados
 
-### 3. Diagnóstico e Monitoramento
-- Interface de diagnóstico web
-- Scripts de verificação de serviços
-- Endpoints de health check
-- Logs detalhados por serviço
+### IA e Processamento
+- **CrewAI**: Orquestração de agentes de IA
+- **Ollama**: Execução de modelos de linguagem
+- **LangChain**: Framework para aplicações de IA
 
-## 🏗️ Arquitetura do Sistema
+### Infraestrutura
+- **Docker**: Containerização
+- **Redis**: Cache e filas
+- **PostgreSQL**: Banco de dados principal
+- **Nginx**: Proxy reverso
 
-O CodeSprint utiliza uma arquitetura distribuída com os seguintes serviços:
+## 🔄 Workflow da Aplicação
 
-- **Frontend** (porta 3000)
-- **Backend** (porta 8000)
-- **CrewAI** (porta 8004)
-- **Ollama** (porta 11434)
-- **Redis** (porta 6379)
+### 1. Interação do Usuário
+```
+Frontend (React) → Formulário de Especificação → Validação Local
+```
 
-## 🔍 Diagnóstico e Troubleshooting
+### 2. Processamento Backend
+```
+Frontend → Backend (FastAPI)
+↓
+Validação de Dados (Pydantic)
+↓
+Processamento Assíncrono
+↓
+Comunicação com CrewAI
+```
 
-### Ferramentas de Diagnóstico
-- Interface web de diagnóstico (http://localhost:3000/diagnostico)
-- Scripts de verificação automática
-- Endpoints de health check
-- Logs detalhados por serviço
+### 3. Integração com IA
+```
+Backend → CrewAI
+↓
+Orquestração de Agentes
+↓
+Comunicação com Ollama
+↓
+Processamento de Modelos
+↓
+Geração de Código
+```
 
-### Comandos Úteis
+### 4. Retorno e Feedback
+```
+CrewAI → Backend → Frontend
+↓
+Atualização em Tempo Real
+↓
+Notificação de Conclusão
+```
+
+## 📊 Logging e Monitoramento
+
+### Níveis de Log
+- **DEBUG**: Detalhes de execução
+- **INFO**: Operações normais
+- **WARNING**: Situações não críticas
+- **ERROR**: Falhas e exceções
+
+### Comandos de Logging
 ```bash
-# Verificar status dos serviços
-docker-compose ps
+# Ver todos os logs
+make logs
 
 # Ver logs específicos
-docker-compose logs [serviço]
+make logs SERVICE=backend
+make logs SERVICE=frontend
+make logs SERVICE=crewai
 
-# Diagnóstico de rede
-docker-compose exec backend python -m app.services.network_diagnostics
+# Limpar logs
+make clean-logs
 ```
 
-## 📊 Monitoramento
+## 🧪 Testes de Conexão
 
-### Recursos do Sistema
+### Verificação de Serviços
 ```bash
-# Monitoramento em tempo real
-docker stats
+# Testar todas as conexões
+make test-connection
 
-# Verificar modelos disponíveis
-docker exec -it codesprint-ollama-1 ollama list
+# Testar serviço específico
+make test-connection SERVICE=backend
+make test-connection SERVICE=crewai
+make test-connection SERVICE=ollama
 ```
 
-## 📄 Licença
+## 📝 Comandos Makefile
 
-Desenvolvido com ❤️ pelo time CodeSprint, ou seja, Leandro Oliveira
+### Gerenciamento de Serviços
+```bash
+# Iniciar serviços
+make up              # Inicia todos os serviços
+make up SERVICE=xxx  # Inicia serviço específico
+
+# Parar serviços
+make down            # Para todos os serviços
+make down SERVICE=xxx # Para serviço específico
+
+# Reiniciar serviços
+make restart         # Reinicia todos os serviços
+make restart SERVICE=xxx # Reinicia serviço específico
+```
+
+### Manutenção
+```bash
+# Limpar ambiente
+make clean           # Remove contêineres e volumes
+make clean-logs      # Limpa logs
+make clean-cache     # Limpa cache
+
+# Verificar status
+make status          # Status de todos os serviços
+make status SERVICE=xxx # Status de serviço específico
+```
+
+### Desenvolvimento
+```bash
+# Testes
+make test            # Executa todos os testes
+make test-unit       # Executa testes unitários
+make test-integration # Executa testes de integração
+
+# Logs
+make logs            # Ver todos os logs
+make logs SERVICE=xxx # Ver logs específicos
+```
+
+### Diagnóstico
+```bash
+# Testes de conexão
+make test-connection # Testa todas as conexões
+make test-connection SERVICE=xxx # Testa conexão específica
+
+# Monitoramento
+make monitor         # Inicia monitoramento em tempo real
+make stats           # Mostra estatísticas dos serviços
+```
