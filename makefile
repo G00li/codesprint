@@ -55,7 +55,7 @@ down_crewai: ## Stop crewai container
 
 test: ## Executar testes do backend
 	@echo "${BLUE}Executando testes do backend...${NC}"
-	cd backend && ./run_tests.sh
+	cd backend && ./run_tests.sh && ./test_connection.sh
 	@echo "${GREEN}Testes concluídos!${NC}"
 
 fix_connection: ## Verifica e corrige a conectividade entre serviços
