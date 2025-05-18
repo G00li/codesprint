@@ -49,7 +49,7 @@ services:
     networks:
       - crewai-network
     environment:
-      - LITELLM_MODEL_NAME=llama3:8b
+      - LITELLM_MODEL_NAME=llama2:7b-chat
       - LITELLM_API_BASE=http://ollama:11434
       - LITELLM_API_KEY=dummy
       - LITELLM_PROVIDER=ollama
@@ -78,6 +78,12 @@ services:
       - ollama_data:/root/.ollama
     networks:
       - crewai-network
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+        reservations:
+          memory: 3G
     restart: unless-stopped
     entrypoint: ollama serve
 

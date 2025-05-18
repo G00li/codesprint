@@ -4,7 +4,7 @@ import logging
 from ollama import Client
 
 class OllamaLLM:
-    def __init__(self, model_name="llama3:8b", temperature=0.3):
+    def __init__(self, model_name="llama2:7b-chat", temperature=0.3):
         host = os.getenv("OLLAMA_HOST", "http://ollama:11434")
         print(f"Inicializando OllamaLLM com host: {host}, modelo: {model_name}")
         self.client = None
