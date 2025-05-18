@@ -52,7 +52,7 @@ O pipeline segue uma sequência específica:
 
 O sistema utiliza o LiteLLM como adaptador para comunicação com o modelo de linguagem:
 
-- **Modelo Base**: Ollama/LLama3:8b
+- **Modelo Base**: Ollama/LLama2:7b-chat
 - **Configuração**:
   - Temperature: 0.3 (para respostas mais consistentes)
   - Timeout: 10.000 segundos por chamada
@@ -123,7 +123,7 @@ O sistema requer as seguintes variáveis de ambiente:
 ```env
 CREWAI_BASE_URL=http://crewai:8004
 OLLAMA_HOST=http://ollama:11434
-LITELLM_MODEL_NAME=ollama/llama3:8b
+LITELLM_MODEL_NAME=ollama/llama2:7b-chat
 LITELLM_API_BASE=http://ollama:11434
 LITELLM_PROVIDER=ollama
 ``` 

@@ -7,9 +7,9 @@ NC = \033[0m # No Color
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n",$$1,$$2}'
 
-install_llama: ## Install llama3:8b model
-	@echo "${BLUE}Instalando modelo llama3:8b...${NC}"
-	docker exec -it codesprint-ollama-1 ollama pull llama3:8b
+install_llama: ## Install llama2:7b-chat model
+	@echo "${BLUE}Instalando modelo llama2:7b-chat...${NC}"
+	docker exec -it codesprint-ollama-1 ollama pull llama2:7b-chat
 	@echo "${GREEN}Modelo instalado com sucesso!${NC}"
 
 up: ## Start all containers
@@ -21,8 +21,8 @@ up: ## Start all containers
 	sleep 10
 	@echo "${BLUE}Verificando status dos serviços...${NC}"
 	docker-compose ps
-	@echo "${BLUE}Instalando modelo llama3:8b...${NC}"
-	docker exec -it codesprint-ollama-1 ollama pull llama3:8b
+	@echo "${BLUE}Instalando modelo llama2:7b-chat...${NC}"
+	docker exec -it codesprint-ollama-1 ollama pull llama2:7b-chat
 	@echo "${GREEN}Todos os serviços foram iniciados e o modelo foi instalado com sucesso!${NC}"
 
 down: ## Stop all containers
