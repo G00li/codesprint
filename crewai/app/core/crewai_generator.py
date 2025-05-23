@@ -41,7 +41,14 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
         # Áreas Selecionadas
         {', '.join(area_selection)}
 
-        Por favor, analise cuidadosamente os requisitos acima e forneça uma análise técnica detalhada.
+        # Instruções para Análise
+        1. Analise cuidadosamente a descrição do projeto
+        2. Considere as tecnologias especificadas
+        3. Adapte a análise para as áreas selecionadas
+        4. Forneça recomendações técnicas detalhadas
+        5. Inclua exemplos práticos quando relevante
+
+        Por favor, forneça uma análise técnica completa e estruturada.
         """
         
         specialist = create_specialist_agent(area_selection)

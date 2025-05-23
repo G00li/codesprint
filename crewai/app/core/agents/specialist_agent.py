@@ -61,14 +61,18 @@ def execute_specialist_task(specialist: Agent, full_description: str) -> dict:
     - Arquitetura recomendada
     - Padrões de design a serem utilizados
     - Considerações de segurança
-    - Escalabilidade e performance]
+    - Escalabilidade e performance
+    - Integrações necessárias
+    - Requisitos de infraestrutura]
     
     # Estrutura do Projeto
     [Forneça uma estrutura detalhada de diretórios e arquivos, incluindo:
     - Organização de pastas
     - Arquivos principais
     - Configurações necessárias
-    - Estrutura de testes]
+    - Estrutura de testes
+    - Documentação
+    - Scripts de automação]
     
     # Tecnologias Recomendadas
     [Liste e justifique todas as tecnologias necessárias, incluindo:
@@ -76,7 +80,16 @@ def execute_specialist_task(specialist: Agent, full_description: str) -> dict:
     - Bibliotecas essenciais
     - Ferramentas de desenvolvimento
     - Banco de dados
-    - Serviços externos]
+    - Serviços externos
+    - Ferramentas de CI/CD
+    - Monitoramento e logging]
+    
+    # Considerações de Implementação
+    [Forneça diretrizes importantes para implementação:
+    - Ordem recomendada de desenvolvimento
+    - Pontos de atenção
+    - Boas práticas
+    - Armadilhas comuns a evitar]
     
     Seja específico e forneça exemplos práticos quando possível.
     """
