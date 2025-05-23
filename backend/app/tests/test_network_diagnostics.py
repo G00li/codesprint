@@ -4,7 +4,7 @@ import requests
 from app.services.network_diagnostics import debug_service_connectivity
 
 
-@patch('requests.get')
+@patch("requests.get")
 def test_debug_service_connectivity_success(mock_get):
     # Configura o mock para simular respostas bem-sucedidas
     mock_response = MagicMock()
@@ -18,7 +18,7 @@ def test_debug_service_connectivity_success(mock_get):
     assert all(service["success"] for service in result["services"])
 
 
-@patch('requests.get')
+@patch("requests.get")
 def test_debug_service_connectivity_partial_failure(mock_get):
     # Configura o mock para simular algumas falhas
     def mock_get_side_effect(*args, **kwargs):
@@ -34,10 +34,12 @@ def test_debug_service_connectivity_partial_failure(mock_get):
     result = debug_service_connectivity()
     assert isinstance(result, dict)
     assert "services" in result
-    assert not all(service["success"] for service in result["services"])
+    assert not all(
+        service["success"] for service in result["services"]
+    )
 
 
-@patch('requests.get')
+@patch("requests.get")
 def test_debug_service_connectivity_all_failure(mock_get):
     # Configura o mock para simular falhas em todos os serviços
     mock_get.side_effect = requests.exceptions.RequestException("Erro de conexão")
@@ -45,13 +47,17 @@ def test_debug_service_connectivity_all_failure(mock_get):
     result = debug_service_connectivity()
     assert isinstance(result, dict)
     assert "services" in result
-    assert not any(service["success"] for service in result["services"])
+    assert not any(
+        service["success"] for service in result["services"]
+    )
 
 
 def test_debug_service_connectivity_timeout():
     # Testa o comportamento com timeout
-    with patch('requests.get', side_effect=requests.exceptions.Timeout("Timeout")):
+    with patch("requests.get", side_effect=requests.exceptions.Timeout("Timeout")):
         result = debug_service_connectivity()
         assert isinstance(result, dict)
         assert "services" in result
-        assert not any(service["success"] for service in result["services"]) 
+        assert not any(
+            service["success"] for service in result["services"]
+        )
