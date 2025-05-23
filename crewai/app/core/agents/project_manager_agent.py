@@ -28,14 +28,11 @@ def execute_project_manager_task(project_manager: Agent, specialist_result: dict
 
     {specialist_result.get('result', 'N/A')}
 
-    E na descrição do projeto:
+    E na descrição original do projeto:
 
     {full_description}
 
-    Crie um plano de projeto no formato abaixo, **seguindo rigorosamente os títulos e a estrutura indicada**. 
-    **Não adicione ou remova seções**. **Use exatamente os nomes de seção a seguir.**
-
-    ---
+    Crie um plano de projeto detalhado seguindo rigorosamente o formato abaixo. **Não adicione ou remova seções**.
 
     # Resumo do Projeto
     [Forneça um resumo detalhado do projeto incluindo:
@@ -55,7 +52,7 @@ def execute_project_manager_task(project_manager: Agent, specialist_result: dict
     - Estrutura de testes]
 
     # Tecnologias Recomendadas
-    [Liste todas as tecnologias necessárias, incluindo:
+    [Liste e detalhe todas as tecnologias necessárias, incluindo:
     - Frameworks principais
     - Bibliotecas essenciais
     - Ferramentas de desenvolvimento

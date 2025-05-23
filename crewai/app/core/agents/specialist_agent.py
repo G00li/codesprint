@@ -50,21 +50,35 @@ def execute_specialist_task(specialist: Agent, full_description: str) -> dict:
     Executa a tarefa do especialista
     """
     specialist_task = f"""
-    Analisar o seguinte projeto e fornecer recomendações técnicas:
+    Analise o seguinte projeto e forneça recomendações técnicas detalhadas:
+
     {full_description}
     
-    Forneça a resposta no seguinte formato:
+    Forneça sua análise no seguinte formato:
     
     # Análise Técnica
-    [Sua análise técnica aqui]
+    [Forneça uma análise técnica detalhada do projeto, considerando:
+    - Arquitetura recomendada
+    - Padrões de design a serem utilizados
+    - Considerações de segurança
+    - Escalabilidade e performance]
     
     # Estrutura do Projeto
-    [Estrutura de diretórios e arquivos]
+    [Forneça uma estrutura detalhada de diretórios e arquivos, incluindo:
+    - Organização de pastas
+    - Arquivos principais
+    - Configurações necessárias
+    - Estrutura de testes]
     
     # Tecnologias Recomendadas
-    [Lista de tecnologias]
+    [Liste e justifique todas as tecnologias necessárias, incluindo:
+    - Frameworks principais
+    - Bibliotecas essenciais
+    - Ferramentas de desenvolvimento
+    - Banco de dados
+    - Serviços externos]
     
-    Seja conciso e específico.
+    Seja específico e forneça exemplos práticos quando possível.
     """
     
     logger.info("Executando tarefa do especialista...")
