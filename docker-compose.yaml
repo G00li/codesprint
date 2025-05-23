@@ -75,15 +75,15 @@ services:
     ports:
       - "11434:11434"
     volumes:
-      - ollama_data:/root/.ollama
+      - ./ollama_data:/root/.ollama
     networks:
       - crewai-network
     deploy:
       resources:
         limits:
-          memory: 4G
+          memory: 2G
         reservations:
-          memory: 3G
+          memory: 1G
     restart: unless-stopped
     entrypoint: ollama serve
 

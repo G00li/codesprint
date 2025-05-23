@@ -7,7 +7,7 @@ from typing import Dict, List, Any, Optional
 class CustomLiteLLM:
     def __init__(self):
         # Configurar variáveis de ambiente para o LiteLLM
-        os.environ["LITELLM_MODEL_NAME"] = "ollama/llama2:7b-chat"  # Formato correto com provider
+        os.environ["LITELLM_MODEL_NAME"] = "ollama/llama2"  # Formato correto com provider
         os.environ["LITELLM_API_BASE"] = "http://ollama:11434"  # Usar o nome do serviço do Docker Compose
         os.environ["LITELLM_PROVIDER"] = "ollama"
         os.environ["LITELLM_API_KEY"] = "dummy"
@@ -66,14 +66,29 @@ class CustomLiteLLM:
         try:
             from litellm import completion
             
+            # Formatar mensagens para melhor compreensão
+            formatted_messages = []
+            for msg in messages:
+                if isinstance(msg, dict) and "content" in msg:
+                    # Adicionar instruções claras para o modelo
+                    if msg["role"] == "user":
+                        formatted_content = f"""
+                        Instruções: Analise cuidadosamente e forneça uma resposta detalhada e estruturada.
+                        
+                        {msg["content"]}
+                        """
+                        formatted_messages.append({"role": "user", "content": formatted_content})
+                    else:
+                        formatted_messages.append(msg)
+            
             # Usar o formato correto para o modelo
             response = completion(
-                model="ollama/llama2:7b-chat",  # Nome completo do modelo com o provider
-                api_base="http://ollama:11434",  # URL do serviço Ollama
-                messages=messages,
+                model="ollama/llama2",
+                api_base="http://ollama:11434",
+                messages=formatted_messages,
                 temperature=0.3,
-                max_tokens=500,  # Limitar o tamanho da resposta
-                timeout=10000  # Timeout específico para a chamada
+                max_tokens=2000,  # Aumentado para respostas mais completas
+                timeout=10000
             )
             
             # Extrair a resposta do modelo

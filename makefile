@@ -9,10 +9,20 @@ NC = \033[0m # No Color
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n",$$1,$$2}'
 
-install_llama: ## Install llama2:7b-chat model
-	@echo "${BLUE}Instalando modelo llama2:7b-chat...${NC}"
-	docker exec -it codesprint-ollama-1 ollama pull llama2:7b-chat
+install_llama: ## Install llama2 model
+	@echo "${BLUE}Instalando modelo llama2...${NC}"
+	docker exec -it codesprint-ollama-1 ollama pull llama2
 	@echo "${GREEN}Modelo instalado com sucesso!${NC}"
+
+install_llama_tiny: ## Install llama2:7b-chat-tiny model
+	@echo "${BLUE}Instalando modelo llama2:7b-chat-tiny...${NC}"
+	docker exec -it codesprint-ollama-1 ollama pull llama2:7b-chat-tiny
+	@echo "${GREEN}Modelo tiny instalado com sucesso!${NC}"
+
+clean_ollama: ## Limpa o cache do Ollama
+	@echo "${BLUE}Limpando cache do Ollama...${NC}"
+	docker exec -it codesprint-ollama-1 ollama rm llama2
+	@echo "${GREEN}Cache do Ollama limpo com sucesso!${NC}"
 
 up: ## Start all containers
 	@echo "${BLUE}Rebuildando containers...${NC}"
@@ -23,8 +33,8 @@ up: ## Start all containers
 	sleep 10
 	@echo "${BLUE}Verificando status dos serviços...${NC}"
 	docker-compose ps
-	@echo "${BLUE}Instalando modelo llama2:7b-chat...${NC}"
-	docker exec -it codesprint-ollama-1 ollama pull llama2:7b-chat
+	@echo "${BLUE}Instalando modelo llama2...${NC}"
+	docker exec -it codesprint-ollama-1 ollama pull llama2
 	@echo "${GREEN}Todos os serviços foram iniciados e o modelo foi instalado com sucesso!${NC}"
 
 down: ## Stop all containers

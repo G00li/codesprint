@@ -32,9 +32,23 @@ def run_project_pipeline(area_selection: list[str], tech_stack: str, description
             return {"error": "Descrição inválida ou muito curta"}
             
         full_description = f"""
-        Projeto: {description}
-        Tecnologias: {tech_stack}
-        Áreas: {', '.join(area_selection)}
+        # Descrição do Projeto
+        {description}
+
+        # Tecnologias Especificadas
+        {tech_stack}
+
+        # Áreas Selecionadas
+        {', '.join(area_selection)}
+
+        # Instruções para Análise
+        1. Analise cuidadosamente a descrição do projeto
+        2. Considere as tecnologias especificadas
+        3. Adapte a análise para as áreas selecionadas
+        4. Forneça recomendações técnicas detalhadas
+        5. Inclua exemplos práticos quando relevante
+
+        Por favor, forneça uma análise técnica completa e estruturada.
         """
         
         specialist = create_specialist_agent(area_selection)
