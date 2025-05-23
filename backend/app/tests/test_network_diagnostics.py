@@ -1,7 +1,8 @@
-import pytest
 from unittest.mock import patch, MagicMock
-from app.services.network_diagnostics import debug_service_connectivity
 import requests
+
+from app.services.network_diagnostics import debug_service_connectivity
+
 
 @patch('requests.get')
 def test_debug_service_connectivity_success(mock_get):
@@ -15,6 +16,7 @@ def test_debug_service_connectivity_success(mock_get):
     assert isinstance(result, dict)
     assert "services" in result
     assert all(service["success"] for service in result["services"])
+
 
 @patch('requests.get')
 def test_debug_service_connectivity_partial_failure(mock_get):
@@ -34,6 +36,7 @@ def test_debug_service_connectivity_partial_failure(mock_get):
     assert "services" in result
     assert not all(service["success"] for service in result["services"])
 
+
 @patch('requests.get')
 def test_debug_service_connectivity_all_failure(mock_get):
     # Configura o mock para simular falhas em todos os serviços
@@ -43,6 +46,7 @@ def test_debug_service_connectivity_all_failure(mock_get):
     assert isinstance(result, dict)
     assert "services" in result
     assert not any(service["success"] for service in result["services"])
+
 
 def test_debug_service_connectivity_timeout():
     # Testa o comportamento com timeout
